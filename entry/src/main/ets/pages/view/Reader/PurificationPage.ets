@@ -1,9 +1,9 @@
 import { router } from '@kit.ArkUI'
-import fs from '@kit.CoreFileKit'
+import fs from '@ohos.file.fs'
 import { FileHandler } from '../../../common/utils/FileHandler'
 import { getPasteDataSync } from '../../../common/utils/utils'
 import { showMessage } from '../../../componets/common/promptShow'
-import purificationRuleStore, { PurificationRule } from '../../../common/utils/PurificationRuleStore'
+import purificationRuleStore, { PurificationRule, PurificationRuleStore } from '../../../common/utils/PurificationRuleStore'
 
 @Entry
 @Component
@@ -28,7 +28,7 @@ struct PurificationPage {
       showMessage('未获取到粘贴信息')
       return
     }
-    const parsed = purificationRuleStore.parseImport(text)
+    const parsed = PurificationRuleStore.parseImport(text)
     if (parsed.length === 0) {
       showMessage('解析失败，请检查粘贴内容是否为净化源JSON')
       return
@@ -47,7 +47,7 @@ struct PurificationPage {
         return
       }
       const text = await fs.readText(paths[0])
-      const parsed = purificationRuleStore.parseImport(text)
+      const parsed = PurificationRuleStore.parseImport(text)
       if (parsed.length === 0) {
         showMessage('解析失败，请检查文件内容是否为净化源JSON')
         return
@@ -96,9 +96,13 @@ struct PurificationPage {
     const item = this.ruleList[this.editIndex]
     item.name = this.editName
     try {
-      const parsed = JSON.parse(this.editRules)
-      if (Array.isArray(parsed)) {
-        item.rules = parsed.map((r: Object) => String(r))
+      const parsed: Object = JSON.parse(this.editRules)
+      if (parsed instanceof Array) {
+        const rules: string[] = []
+        parsed.forEach((r: Object) => {
+          rules.push(String(r))
+        })
+        item.rules = rules
       }
     } catch (e) {
       showMessage('规则内容JSON格式不正确')

@@ -15,12 +15,12 @@ export default class ReadingDurationUtil {
       return
     }
     const key = ReadingDurationUtil.todayKey()
-    const old = bookDataPreferences.get(key)
+    const old = bookDataPreferences.shared.get(key)
     let total: number = 0
     if (typeof old === 'number') {
       total = old
     }
-    bookDataPreferences.set(key, total + Math.floor(seconds))
+    bookDataPreferences.shared.set(key, total + Math.floor(seconds))
   }
 
   /**
@@ -28,7 +28,7 @@ export default class ReadingDurationUtil {
    */
   static getTodayMinutes(): number {
     const key = ReadingDurationUtil.todayKey()
-    const value = bookDataPreferences.get(key)
+    const value = bookDataPreferences.shared.get(key)
     if (typeof value !== 'number' || value <= 0) {
       return 0
     }

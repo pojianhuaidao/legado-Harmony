@@ -8,7 +8,7 @@ export interface PurificationRule {
 }
 
 // 净化规则持久化存储（Preferences）
-class PurificationRuleStore {
+export class PurificationRuleStore {
   preferences?: dataPreferences.Preferences;
   preferencesName: string = 'purification_rules_store';
   key: string = 'purification_rules';
@@ -43,18 +43,30 @@ class PurificationRuleStore {
   static parseImport(text: string): PurificationRule[] {
     const result: PurificationRule[] = [];
     try {
-      const data = JSON.parse(text);
-      if (Array.isArray(data)) {
+      const data: Object = JSON.parse(text);
+      if (data instanceof Array) {
         data.forEach((item: object) => {
           const obj = item as Record<string, Object>;
           const name = obj['name'] !== undefined ? String(obj['name']) : '未命名规则';
-          const rules = obj['rules'] !== undefined && Array.isArray(obj['rules']) ? obj['rules'].map((r: Object) => String(r)) : [];
+          const rawRules = obj['rules'] !== undefined ? obj['rules'] : null;
+          const rules: string[] = [];
+          if (rawRules instanceof Array) {
+            rawRules.forEach((r: Object) => {
+              rules.push(String(r));
+            });
+          }
           result.push({ name: name, enabled: true, rules: rules });
         });
       } else {
         const obj = data as Record<string, Object>;
         const name = obj['name'] !== undefined ? String(obj['name']) : '未命名规则';
-        const rules = obj['rules'] !== undefined && Array.isArray(obj['rules']) ? obj['rules'].map((r: Object) => String(r)) : [];
+        const rawRules = obj['rules'] !== undefined ? obj['rules'] : null;
+        const rules: string[] = [];
+        if (rawRules instanceof Array) {
+          rawRules.forEach((r: Object) => {
+            rules.push(String(r));
+          });
+        }
         result.push({ name: name, enabled: true, rules: rules });
       }
     } catch (e) {
