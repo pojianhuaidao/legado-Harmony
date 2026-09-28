@@ -51,6 +51,18 @@ jobs:
           print('signingConfigs stripped')
           EOF
 
+      - name: Inspect SDK for jsvm
+        run: |
+          echo "SDK root: $HOS_SDK_HOME"
+          find "$HOS_SDK_HOME" -maxdepth 4 -iname '*jsvm*' 2>/dev/null | head -20
+          echo "--- ets/api jsvm? ---"
+          find "$HOS_SDK_HOME" -path '*ets/api*' -iname '*jsvm*' 2>/dev/null | head -20
+          echo "--- hvigor version ---"
+          cat "$HOS_SDK_HOME/../hvigor/hvigor/package.json" 2>/dev/null | grep '"version"' | head -1 || true
+          echo "--- sdk layout ---"
+          ls "$HOS_SDK_HOME" 2>/dev/null
+          ls "$HOS_SDK_HOME/default/openharmony/ets/api" 2>/dev/null | grep -i jsvm || echo "NO jsvm in default/openharmony/ets/api"
+
       - name: ohpm install
         run: |
           export DEVECO_SDK_HOME="$HOS_SDK_HOME"

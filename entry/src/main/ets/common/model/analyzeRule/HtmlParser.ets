@@ -519,7 +519,8 @@ export class SelectorEngine {
     const numIdxMatch = rest.match(/\.(-?\d+)(?![\w-])/);
     if (numIdxMatch !== null) {
       seg.index = parseInt(numIdxMatch[1], 10);
-      rest = rest.substring(0, numIdxMatch.index) + rest.substring(numIdxMatch.index + numIdxMatch[0].length);
+      const idxPos = numIdxMatch.index as number;
+      rest = rest.substring(0, idxPos) + rest.substring(idxPos + numIdxMatch[0].length);
     }
     // 类名与 id（纯 .name 形式）
     const clsMatches = rest.match(/\.([\w-]+)/g);
