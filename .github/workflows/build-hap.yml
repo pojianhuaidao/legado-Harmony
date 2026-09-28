@@ -1,0 +1,77 @@
+name: Build Debug HAP
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install hvigor CLI
+        run: |
+          npm install -g @ohos/hvigor@5.0.2 @ohos/hvigor-ohos-plugin@5.0.2
+          hvigor --version
+
+      # HarmonyOS SDK 为私有 SDK，无法在 CI 中自动下载。
+      # 需要先在本机 DevEco Studio 安装目录打包 sdk 目录（含 sdk + command-line-tools），
+      # 上传到私有存储/对象存储后，将直链配置到仓库 Secrets: OHOS_SDK_URL。
+      - name: Download HarmonyOS SDK
+        env:
+          OHOS_SDK_URL: ${{ secrets.OHOS_SDK_URL }}
+        run: |
+          if [ -z "$OHOS_SDK_URL" ]; then
+            echo "::error::未配置 OHOS_SDK_URL secret（HarmonyOS SDK 压缩包直链）。请先在仓库 Settings -> Secrets and variables -> Actions 添加。"
+            exit 1
+          fi
+          curl -fL --retry 3 -o /tmp/ohos-sdk.zip "$OHOS_SDK_URL"
+          mkdir -p "$HOME/ohos-sdk"
+          unzip -q /tmp/ohos-sdk.zip -d "$HOME/ohos-sdk"
+          echo "OHOS_SDK_HOME=$HOME/ohos-sdk" >> "$GITHUB_ENV"
+
+      # 工程 signingConfigs 指向本机签名文件（legado.p12 等），CI 无此文件，
+      # 构建前移除签名配置，产出 unsigned HAP；如需可安装包，后续可加
+      # hap-sign-tool 签名步骤（调试证书经 Secrets 注入）。
+      - name: Strip local signing config
+        run: |
+          python3 - <<'EOF'
+          import json, re
+          p = 'build-profile.json5'
+          s = open(p, encoding='utf-8').read()
+          # 将 signingConfigs 置空数组
+          s = re.sub(r'"signingConfigs"\s*:\s*\[.*?\],', '"signingConfigs": [],', s, flags=re.S)
+          # product 中的 signingConfig 引用一并移除
+          s = re.sub(r'\s*"signingConfig"\s*:\s*"[^"]*",?', '', s)
+          open(p, 'w', encoding='utf-8').write(s)
+          print('signingConfigs stripped')
+          EOF
+
+      - name: Build debug HAP (unsigned)
+        run: |
+          hvigor --no-daemon assembleHap --mode module -p product=default -p buildMode=debug
+
+      - name: Upload HAP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-debug-hap
+          path: |
+            entry/build/**/outputs/**/*.hap
+            commons/**/build/**/outputs/**/*.hap
+            readerLibrary/**/build/**/outputs/**/*.hap
+          if-no-files-found: error
