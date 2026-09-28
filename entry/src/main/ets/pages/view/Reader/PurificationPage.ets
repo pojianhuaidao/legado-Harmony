@@ -202,8 +202,9 @@ struct PurificationPage {
             router.back()
           })
         Text('净化管理').fontSize(17).fontWeight(600).layoutWeight(1).textAlign(TextAlign.Center)
-        Image($r('app.media.icon_rule_export'))
-          .width(24).height(24)
+        Text('导入')
+          .fontSize(14)
+          .fontColor('#F60')
           .bindMenu(this.importMenu(), { borderRadius: 12 })
       }
       .width('100%')
