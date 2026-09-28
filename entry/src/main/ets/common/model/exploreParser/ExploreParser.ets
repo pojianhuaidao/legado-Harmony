@@ -4,7 +4,7 @@
  * 改造前：POST {BASE_URL}/common/analysisRules 远端解析。
  * 改造后：requestUtils 端侧抓取发现页 -> RuleAnalyzer 本地执行 ruleExplore 规则。
  */
-import { ExploreRule } from '../../database/entities/rule';
+import { ExploreRule } from '../../../database/entities/rule';
 import { RuleAnalyzer } from '../analyzeRule/RuleAnalyzer';
 import { SearchConfig } from '../SearchConfig';
 import requestUtil from '../../utils/requestUtils';

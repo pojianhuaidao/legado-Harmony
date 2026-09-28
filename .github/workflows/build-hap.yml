@@ -1,4 +1,4 @@
-name: Build Debug HAP (unsigned)
+name: Build Debug HAP (unsigned, setup-ohos)
 
 on:
   workflow_dispatch:
@@ -14,37 +14,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev
+
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      # 华为官方 Command Line Tools 26.0.0.851（内含 HarmonyOS SDK 26 + hvigor 6.26.8 + ohpm + node）
-      # 直链从华为开发者下载中心获取，签名参数有效期约 10 年，无需登录。
-      - name: Download HarmonyOS Command Line Tools
-        run: |
-          curl -fL --retry 5 --retry-all-errors -A 'Mozilla/5.0' -o /tmp/clt.zip \
-            "https://contentcenter-vali-drcn.dbankcdn.cn/pvt_2/DeveloperAlliance_package_901_9/de/v3/kICkkkAeThGTxoJ0yD55vA/commandline-tools-linux-x64-26.0.0.851.zip?HW-CC-KV=V1&HW-CC-Date=20260928T072229Z&HW-CC-Expire=315360000&HW-CC-Sign=9F0371E2E668EC958BA13AD6A7CC92BD194360AF545FFE6070A12FE905B027A1"
-          mkdir -p "$HOME/clt"
-          unzip -q /tmp/clt.zip -d "$HOME/clt"
-          ls "$HOME/clt/command-line-tools"
-          cat "$HOME/clt/command-line-tools/version.txt"
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      # 工程 hvigorfile.ts 通过 '@ohos/hvigor-ohos-plugin' 解析构建插件，
-      # 将工具链内置插件软链到工程 node_modules，保证 hvigor 6.26.8 可直接加载。
-      - name: Link hvigor plugins to project
-        run: |
-          mkdir -p node_modules/@ohos
-          ln -sfn "$HOME/clt/command-line-tools/hvigor/hvigor" node_modules/@ohos/hvigor
-          ln -sfn "$HOME/clt/command-line-tools/hvigor/hvigor-ohos-plugin" node_modules/@ohos/hvigor-ohos-plugin
+      # ErBWs/setup-ohos@v2 自动下载+缓存 HarmonyOS CLI tools（含 SDK/hvigorw/ohpm）
+      # 5.0.13.200 = API 14 / 5.0.2(14)，与工程 compatibleSdkVersion 匹配
+      - name: Setup HarmonyOS CLI tools (API 14 / 5.0.2)
+        uses: ErBWs/setup-ohos@v2
+        with:
+          version: 5.0.13.200
+          cache: true
 
-      # 工程 signingConfigs 指向本机签名文件（legado.p12 等），CI 无此文件，
-      # 构建前移除签名配置，产出 unsigned HAP，可直接侧载。
+      # 工程 signingConfigs 指向本机 DevEco 签名文件（绝对路径+密文），CI 不可用，剥离后产 unsigned HAP
       - name: Strip local signing config
         run: |
           python3 - <<'EOF'
-          import json, re
+          import re
           p = 'build-profile.json5'
           s = open(p, encoding='utf-8').read()
           s = re.sub(r'"signingConfigs"\s*:\s*\[.*?\],', '"signingConfigs": [],', s, flags=re.S)
@@ -55,15 +53,15 @@ jobs:
 
       - name: ohpm install
         run: |
-          export DEVECO_SDK_HOME="$HOME/clt/command-line-tools/sdk"
-          export PATH="$HOME/clt/command-line-tools/bin:$PATH"
+          export DEVECO_SDK_HOME="$HOS_SDK_HOME"
+          export PATH="$HOS_SDK_HOME/../bin:$PATH"
           ohpm config set registry https://ohpm.openharmony.cn/ohpm/
           ohpm install --all
 
       - name: Build debug HAP (unsigned)
         run: |
-          export DEVECO_SDK_HOME="$HOME/clt/command-line-tools/sdk"
-          export PATH="$HOME/clt/command-line-tools/bin:$PATH"
+          export DEVECO_SDK_HOME="$HOS_SDK_HOME"
+          export PATH="$HOS_SDK_HOME/../bin:$PATH"
           hvigorw --no-daemon assembleHap --mode module -p product=default -p buildMode=debug
 
       - name: Upload HAP artifact

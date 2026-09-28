@@ -689,7 +689,7 @@ export class JsonPathUtils {
    * 若结果是标量返回其字符串表达。
    */
   static query(jsonStr: string, path: string): string {
-    let obj: Object = null;
+    let obj: Object | null = null;
     try {
       obj = JSON.parse(jsonStr);
     } catch (e) {
@@ -720,7 +720,7 @@ export class JsonPathUtils {
    * 取 JSON 中所有匹配 key 的值（用于 $..key），返回第一个匹配值的 JSON 字符串
    */
   static queryAll(jsonStr: string, key: string): string {
-    let obj: Object = null;
+    let obj: Object | null = null;
     try {
       obj = JSON.parse(jsonStr);
     } catch (e) {
@@ -782,7 +782,7 @@ export class JsonPathUtils {
     return tokens;
   }
 
-  private static evalPath(obj: Object, tokens: string[], idx: number): Object {
+  private static evalPath(obj: Object | null | undefined, tokens: string[], idx: number): Object | null | undefined {
     if (idx >= tokens.length) {
       return obj;
     }
@@ -790,11 +790,12 @@ export class JsonPathUtils {
     if (obj === null || obj === undefined) {
       return undefined;
     }
-    let next: Object = undefined;
+    let next: Object | null | undefined = undefined;
     if (Array.isArray(obj)) {
+      const arr = obj as Object[];
       const arrIdx = parseInt(tok, 10);
-      if (!isNaN(arrIdx) && arrIdx >= 0 && arrIdx < obj.length) {
-        next = obj[arrIdx];
+      if (!isNaN(arrIdx) && arrIdx >= 0 && arrIdx < arr.length) {
+        next = arr[arrIdx];
       } else {
         return undefined;
       }
@@ -807,13 +808,14 @@ export class JsonPathUtils {
     return JsonPathUtils.evalPath(next, tokens, idx + 1);
   }
 
-  private static deepCollect(obj: Object, key: string, out: Object[]): void {
+  private static deepCollect(obj: Object | null | undefined, key: string, out: Object[]): void {
     if (obj === null || obj === undefined) {
       return;
     }
     if (Array.isArray(obj)) {
-      for (let i = 0; i < obj.length; i++) {
-        JsonPathUtils.deepCollect(obj[i], key, out);
+      const arr = obj as Object[];
+      for (let i = 0; i < arr.length; i++) {
+        JsonPathUtils.deepCollect(arr[i], key, out);
       }
       return;
     }
