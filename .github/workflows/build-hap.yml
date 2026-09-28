@@ -1,15 +1,16 @@
-name: Build Debug HAP
+name: Build Debug HAP (unsigned)
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths-ignore:
       - '**.md'
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -19,52 +20,45 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install hvigor CLI
+      # 鍗庝负瀹樻柟 Command Line Tools 26.0.0.851锛堝唴鍚?HarmonyOS SDK 26 + hvigor 6.26.8 + ohpm + node锛?      # 鐩撮摼浠庡崕涓哄紑鍙戣€呬笅杞戒腑蹇冭幏鍙栵紝绛惧悕鍙傛暟鏈夋晥鏈熺害 10 骞达紝鏃犻渶鐧诲綍銆?      - name: Download HarmonyOS Command Line Tools
         run: |
-          npm install -g @ohos/hvigor@5.0.2 @ohos/hvigor-ohos-plugin@5.0.2
-          hvigor --version
+          curl -fL --retry 5 --retry-all-errors -A 'Mozilla/5.0' -o /tmp/clt.zip \
+            "https://contentcenter-vali-drcn.dbankcdn.cn/pvt_2/DeveloperAlliance_package_901_9/de/v3/kICkkkAeThGTxoJ0yD55vA/commandline-tools-linux-x64-26.0.0.851.zip?HW-CC-KV=V1&HW-CC-Date=20260928T072229Z&HW-CC-Expire=315360000&HW-CC-Sign=9F0371E2E668EC958BA13AD6A7CC92BD194360AF545FFE6070A12FE905B027A1"
+          mkdir -p "$HOME/clt"
+          unzip -q /tmp/clt.zip -d "$HOME/clt"
+          ls "$HOME/clt/command-line-tools"
+          cat "$HOME/clt/command-line-tools/version.txt"
 
-      # HarmonyOS SDK 为私有 SDK，无法在 CI 中自动下载。
-      # 需要先在本机 DevEco Studio 安装目录打包 sdk 目录（含 sdk + command-line-tools），
-      # 上传到私有存储/对象存储后，将直链配置到仓库 Secrets: OHOS_SDK_URL。
-      - name: Download HarmonyOS SDK
-        env:
-          OHOS_SDK_URL: ${{ secrets.OHOS_SDK_URL }}
+      # 宸ョ▼ hvigorfile.ts 閫氳繃 '@ohos/hvigor-ohos-plugin' 瑙ｆ瀽鏋勫缓鎻掍欢锛?      # 灏嗗伐鍏烽摼鍐呯疆鎻掍欢杞摼鍒板伐绋?node_modules锛屼繚璇?hvigor 6.26.8 鍙洿鎺ュ姞杞姐€?      - name: Link hvigor plugins to project
         run: |
-          if [ -z "$OHOS_SDK_URL" ]; then
-            echo "::error::未配置 OHOS_SDK_URL secret（HarmonyOS SDK 压缩包直链）。请先在仓库 Settings -> Secrets and variables -> Actions 添加。"
-            exit 1
-          fi
-          curl -fL --retry 3 -o /tmp/ohos-sdk.zip "$OHOS_SDK_URL"
-          mkdir -p "$HOME/ohos-sdk"
-          unzip -q /tmp/ohos-sdk.zip -d "$HOME/ohos-sdk"
-          echo "OHOS_SDK_HOME=$HOME/ohos-sdk" >> "$GITHUB_ENV"
+          mkdir -p node_modules/@ohos
+          ln -sfn "$HOME/clt/command-line-tools/hvigor/hvigor" node_modules/@ohos/hvigor
+          ln -sfn "$HOME/clt/command-line-tools/hvigor/hvigor-ohos-plugin" node_modules/@ohos/hvigor-ohos-plugin
 
-      # 工程 signingConfigs 指向本机签名文件（legado.p12 等），CI 无此文件，
-      # 构建前移除签名配置，产出 unsigned HAP；如需可安装包，后续可加
-      # hap-sign-tool 签名步骤（调试证书经 Secrets 注入）。
-      - name: Strip local signing config
+      # 宸ョ▼ signingConfigs 鎸囧悜鏈満绛惧悕鏂囦欢锛坙egado.p12 绛夛級锛孋I 鏃犳鏂囦欢锛?      # 鏋勫缓鍓嶇Щ闄ょ鍚嶉厤缃紝浜у嚭 unsigned HAP锛屽彲鐩存帴渚ц浇銆?      - name: Strip local signing config
         run: |
           python3 - <<'EOF'
           import json, re
           p = 'build-profile.json5'
           s = open(p, encoding='utf-8').read()
-          # 将 signingConfigs 置空数组
           s = re.sub(r'"signingConfigs"\s*:\s*\[.*?\],', '"signingConfigs": [],', s, flags=re.S)
-          # product 中的 signingConfig 引用一并移除
           s = re.sub(r'\s*"signingConfig"\s*:\s*"[^"]*",?', '', s)
           open(p, 'w', encoding='utf-8').write(s)
           print('signingConfigs stripped')
           EOF
 
+      - name: ohpm install
+        run: |
+          export DEVECO_SDK_HOME="$HOME/clt/command-line-tools/sdk"
+          export PATH="$HOME/clt/command-line-tools/bin:$PATH"
+          ohpm config set registry https://ohpm.openharmony.cn/ohpm/
+          ohpm install --all
+
       - name: Build debug HAP (unsigned)
         run: |
-          hvigor --no-daemon assembleHap --mode module -p product=default -p buildMode=debug
+          export DEVECO_SDK_HOME="$HOME/clt/command-line-tools/sdk"
+          export PATH="$HOME/clt/command-line-tools/bin:$PATH"
+          hvigorw --no-daemon assembleHap --mode module -p product=default -p buildMode=debug
 
       - name: Upload HAP artifact
         uses: actions/upload-artifact@v4
