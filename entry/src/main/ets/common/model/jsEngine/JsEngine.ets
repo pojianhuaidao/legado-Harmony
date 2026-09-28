@@ -12,7 +12,7 @@
  *  - JS 异常统一转换为 JsEngineError 抛出，由调用方捕获；
  *  - JSValue 与 ArkTS 基础类型（string/number/boolean/object）互转集中在 toArkValue / toJsValue。
  */
-import { JSRuntime, JSContext, JSValue } from '@ohos.jsvm';
+import { JSRuntime, JSContext, JSValue } from './jsvmStub';
 import { BusinessError } from '@ohos.base';
 
 /**
