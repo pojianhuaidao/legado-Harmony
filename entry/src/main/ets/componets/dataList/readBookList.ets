@@ -2,6 +2,8 @@
 
 
 export class readBookList{
+  //记录id（对应book_history.id，用于持久化删除）
+  id:number
   //书名
   bookName:string
   //封面
@@ -22,7 +24,7 @@ export class readBookList{
   status:boolean
 
   constructor(bookName: string, coverImage: ResourceStr, author: string, readingDuration: number[], dateTime: Date,
-    schedule: number, bookmark: number,readFrequency:number=0, status: boolean=false) {
+    schedule: number, bookmark: number,readFrequency:number=0, status: boolean=false, id: number=0) {
     this.bookName = bookName
     this.coverImage = coverImage
     this.author = author
@@ -32,6 +34,7 @@ export class readBookList{
     this.bookmark = bookmark
     this.readFrequency=readFrequency
     this.status = status
+    this.id = id
   }
 
 

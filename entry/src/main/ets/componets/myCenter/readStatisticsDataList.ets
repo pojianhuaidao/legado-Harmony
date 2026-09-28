@@ -98,6 +98,14 @@ export struct readStatisticsDataList{
   build() {
      Column(){
        this.readHeader(this.dateValue)
+       if (this.bookList.length === 0) {
+         Column({ space: 8 }) {
+           Text('暂无数据').fontSize(15).fontColor('#999999')
+           Text('阅读书籍后将在此展示记录').fontSize(12).fontColor('#bbbbbb')
+         }
+         .width('100%')
+         .padding({ top: 60 })
+       }
        Scroll(){
          Column(){
            ForEach(this.bookList,(book:readBookList,index:number)=>{

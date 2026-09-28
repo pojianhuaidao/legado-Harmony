@@ -10,6 +10,7 @@ import { ThemeItem } from '../../../common/model/Theme'
 import { image } from '@kit.ImageKit'
 import { resourceManager } from '@kit.LocalizationKit'
 import { BusinessError } from '@kit.BasicServicesKit'
+import ReadingDurationUtil from '../../../common/utils/ReadingDurationUtil'
 
 @Entry
 @Component
@@ -20,7 +21,6 @@ export default struct MyCenter {
     new dataItem("读过",20),
     new dataItem("读完",20),
     new dataItem("书签",20),
-    new dataItem("勋章",20),
   ]
   @State center_list:dataItem[]=[
     new dataItem("备份",1,$r("app.media.my_center_cloud_icon")),
@@ -33,13 +33,24 @@ export default struct MyCenter {
     new dataItem("帮助中心",1,$r("app.media.my_center_help_icon")),
     new dataItem("关于我们",2,$r("app.media.my_center_about_icon")),
     new dataItem("清理缓存",3,$r("app.media.my_center_clean_icon")),
-    new dataItem("文件管理",4,$r("app.media.my_center_file_icon")),
   ]
   @StorageLink('topRectHeight') topRectHeight: number = 0
   Column = new ColumnModifier()
 
   // 主题颜色
   @StorageProp(ThemeStorageKey.THEME) theme: ThemeItem = {} as ThemeItem
+
+  aboutToAppear(): void {
+    this.refreshReadingTime()
+  }
+
+  onPageShow(): void {
+    this.refreshReadingTime()
+  }
+
+  refreshReadingTime(): void {
+    this.reading_time = ReadingDurationUtil.getTodayMinutes()
+  }
 
   build() {
     Column(){
@@ -65,7 +76,7 @@ export default struct MyCenter {
           .interpolation(ImageInterpolation.Medium).onClick(this.avatar_onclick)
         //昵称及阅读时长
         Column({space :8}){
-          Text("夏目友人").fontSize(16).fontWeight(600).lineHeight(24)
+          Text("本地书友").fontSize(16).fontWeight(600).lineHeight(24)
           Text("今日阅读"+this.reading_time+"分钟").fontSize(12).fontColor(TextConstants.TEXT_FONT_COLOR)
             .lineHeight(20)
         }.alignItems(HorizontalAlign.Start).width("45%").height("100%").layoutWeight(1)
@@ -169,16 +180,12 @@ export default struct MyCenter {
   //读过点击事件
   head_onclick(value:number){
     console.log("点击了"+value)
-    if(value==3){
-      //勋章
-    }else{
-      router.pushUrl({
-        url:"pages/view/myCenter/readStatistics",
-        params:{
-          value:value
-        }
-      })
-    }
+    router.pushUrl({
+      url:"pages/view/myCenter/readStatistics",
+      params:{
+        value:value
+      }
+    })
   }
   //云盘,书源,主题,净化点击事件
   centerOnclick(value:number|string){
@@ -199,8 +206,16 @@ export default struct MyCenter {
         })
         break
       case 3:
+        // 书源管理
+        router.pushUrl({
+          url: 'pages/view/Find/BookSource/Index'
+        })
         break
       case 4:
+        // 净化管理
+        router.pushUrl({
+          url: 'pages/view/Reader/PurificationPage'
+        })
         break
     }
   }
@@ -225,9 +240,7 @@ export default struct MyCenter {
         router.pushUrl({
           url: 'pages/view/myCenter/clearCache'
         })
-        break;
-      case 4:
-
+        break
     }
   }
   toMySetPage(){

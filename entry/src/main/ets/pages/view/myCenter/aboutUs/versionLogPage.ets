@@ -8,8 +8,15 @@ struct VersionLogPage {
   @StorageLink('bottomRectHeight') bottomRectHeight: number = 0
   @StorageLink('topRectHeight') topRectHeight: number = 0
   @State List: Array<string> = [
-    '更新icon图标',
-    '关于我们-QQ群增加Beta群',
+    '书源解析端侧化改造：搜索、发现、详情、目录、正文解析由远端服务迁移至本地JS引擎，无远端依赖',
+    '发现页支持展示书源内容（书籍列表）',
+    '新增阅读时长统计：按天记录阅读时间，我的页展示今日阅读分钟数',
+    '读过、读完、书签列表改为持久化数据，支持删除与全选批量删除',
+    '新增书源管理入口：书源列表、启用/停用、编辑、删除、导入、分组',
+    '新增净化管理：净化规则列表、导入净化源（粘贴/本地文件）、启用/停用、编辑、删除',
+    '关于我们精简：移除检查更新、开发人员、官网、公众号、QQ频道、QQ群',
+    '移除文件管理入口',
+    '支持CI流水线自动出包',
   ]
   // 主题颜色
   @StorageProp(ThemeStorageKey.THEME) theme: ThemeItem = {} as ThemeItem
@@ -46,7 +53,7 @@ struct VersionLogPage {
       .height(48)
       .width("100%")
 
-      this.versionCard("V1.0.0.1", "2024/9/8", this.List)
+      this.versionCard("V1.0.0.2", "2026/9/28", this.List)
       //this.versionCard("V5.1.1", "2024/5/9", this.List)
     }
     .height("100%")

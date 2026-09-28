@@ -10,6 +10,7 @@ import { MusicPlayer } from 'ets/componets/Reader/MusicPlayer';
 import purificationView from './purificationView';
 import { chaptersItem } from 'ets/componets/dataList/ReaderChaptersItem';
 import { BookList } from 'ets/componets/dataList/bookList';
+import ReadingDurationUtil from '../../../common/utils/ReadingDurationUtil';
 
 interface ParamsObj {
   bookData: BookList,
@@ -59,6 +60,41 @@ struct ReaderPage {
     this.txtFile = temp.txtFile //txt小说
     this.TotalChapters = this.txtFile.length
     this.CurrentChapters = temp.clickBookChapter
+    this.startReadingTimer()
+  }
+
+  durationTimer: number = -1
+  durationStart: number = 0
+
+  startReadingTimer(): void {
+    this.durationStart = Date.now()
+    if (this.durationTimer !== -1) {
+      return
+    }
+    this.durationTimer = setInterval(() => {
+      const now = Date.now()
+      const seconds = Math.floor((now - this.durationStart) / 1000)
+      if (seconds > 0) {
+        ReadingDurationUtil.record(seconds)
+        this.durationStart = now
+      }
+    }, 30000)
+  }
+
+  stopReadingTimer(): void {
+    if (this.durationTimer !== -1) {
+      clearInterval(this.durationTimer)
+      this.durationTimer = -1
+    }
+    const now = Date.now()
+    const seconds = Math.floor((now - this.durationStart) / 1000)
+    if (seconds > 0) {
+      ReadingDurationUtil.record(seconds)
+    }
+  }
+
+  aboutToDisappear(): void {
+    this.stopReadingTimer()
   }
 
   build() {

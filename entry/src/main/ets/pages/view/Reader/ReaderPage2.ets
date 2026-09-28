@@ -32,6 +32,7 @@ import bookHistoryUtils from '../../../common/utils/BookHistoryUtils';
 import { Books } from '../../../database/entities/Books';
 import { FileHandler } from '../../../common/utils/FileHandler';
 import ChaptersDataSource from '../../../common/LazyIDataSource/ChaptersDataSource';
+import ReadingDurationUtil from '../../../common/utils/ReadingDurationUtil';
 
 
 interface ParamsObj {
@@ -67,6 +68,41 @@ struct ReaderPage2 {
     this.currentChapters = temp.clickBookChapter
 
     this.changeSystemBarStatue();
+    this.startReadingTimer();
+  }
+
+  durationTimer: number = -1
+  durationStart: number = 0
+
+  startReadingTimer(): void {
+    this.durationStart = Date.now()
+    if (this.durationTimer !== -1) {
+      return
+    }
+    this.durationTimer = setInterval(() => {
+      const now = Date.now()
+      const seconds = Math.floor((now - this.durationStart) / 1000)
+      if (seconds > 0) {
+        ReadingDurationUtil.record(seconds)
+        this.durationStart = now
+      }
+    }, 30000)
+  }
+
+  stopReadingTimer(): void {
+    if (this.durationTimer !== -1) {
+      clearInterval(this.durationTimer)
+      this.durationTimer = -1
+    }
+    const now = Date.now()
+    const seconds = Math.floor((now - this.durationStart) / 1000)
+    if (seconds > 0) {
+      ReadingDurationUtil.record(seconds)
+    }
+  }
+
+  aboutToDisappear(): void {
+    this.stopReadingTimer()
   }
 
 

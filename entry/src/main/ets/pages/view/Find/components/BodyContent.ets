@@ -38,7 +38,7 @@ export default struct BodyContent {
     BookSourceDao.search({
       type: [0, 2, 1][this.currentIndex],
       enabled: true,
-      hasExploreUrl: this.hasExploreUrl,
+      hasExploreUrl: true,
       showExplore: true
     }).then(bookSources => {
       console.info('TagInfo', JSON.stringify(bookSources.slice(0, 3)))

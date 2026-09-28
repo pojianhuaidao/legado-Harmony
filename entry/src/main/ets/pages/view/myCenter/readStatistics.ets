@@ -7,6 +7,8 @@ import { readBookList } from '../../../componets/dataList/readBookList';
 import { readTabs } from '../../../componets/myCenter/readTabs';
 import { serviceDialog } from '../../../componets/webDavService/serviceDialog';
 import { PublicConstants } from '../../../common/constants/PublicConstants';
+import bookHistoryDao from '../../../database/dao/BookHistoryDao';
+import { BookHistory } from '../../../database/entities/BookHistory';
 
 
 @Entry
@@ -32,17 +34,31 @@ struct readStatistics {
   @Provide delStatus:boolean=false
 
   @State delDialog:boolean=false
-  @State bookList:readBookList[]=[
-    new readBookList("夜的命名术",$r("app.media.book_cover"),"会说话的肘子",[20,23],new Date(),20,0),
-    new readBookList("夜的命名术",$r("app.media.book_cover"),"会说话的肘子",[21,23],new Date(),30,1),
-    new readBookList("夜的命名术",$r("app.media.book_cover"),"会说话的肘子",[22,23],new Date(),40,2),
-    new readBookList("夜的命名术",$r("app.media.book_cover"),"会说话的肘子",[23,23],new Date(),70,3),
-    new readBookList("夜的命名术",$r("app.media.book_cover"),"会说话的肘子",[23,23],new Date(),70,3),
-    new readBookList("夜的命名术",$r("app.media.book_cover"),"会说话的肘子",[23,23],new Date(),70,3),
-    new readBookList("夜的命名术",$r("app.media.book_cover"),"会说话的肘子",[23,23],new Date(),70,3),
-    new readBookList("夜的命名术",$r("app.media.book_cover"),"会说话的肘子",[23,23],new Date(),70,3),
+  @State bookList:readBookList[]=[]
 
-  ]
+  async loadBookList() {
+    // 加载全部阅读历史（读过/读完/书签共用真实历史数据，删除后持久化，不再出现测试假数据）
+    const list = await bookHistoryDao.search({})
+    const mapped: readBookList[] = []
+    list.forEach((item: BookHistory) => {
+      const dur = Math.max(0, item.durChapterTime)
+      mapped.push(new readBookList(
+        item.bookName,
+        item.coverUrl !== '' ? item.coverUrl : $r("app.media.book_cover"),
+        item.author,
+        [Math.floor(dur / 3600000), Math.floor((dur % 3600000) / 60000)],
+        new Date(dur),
+        0,
+        0,
+        0,
+        false,
+        item.id !== undefined ? item.id : 0
+      ))
+    })
+    this.bookList = mapped
+    const now = new Date()
+    this.dateValue = [now.getFullYear(), mapped.length]
+  }
   @Builder head(){
     Row(){
       Row(){
@@ -56,7 +72,17 @@ struct readStatistics {
         Text(this.title_list[this.type].title).fontSize(16).fontWeight(600).lineHeight(24)
       }.width("33%")
       .justifyContent(FlexAlign.Center)
-      Row(){
+      Row({space:12}){
+        if(this.delStatus){
+          Text("全选")
+            .fontSize(14)
+            .fontWeight(500)
+            .lineHeight(22)
+            .fontColor("rgba(0, 0, 0, 0.45)")
+            .onClick(()=>{
+              this.bookList.forEach(item=>{item.status=true})
+            })
+        }
         Text(this.delStatus?"完成":"管理")
           .fontSize(14)
           .fontWeight(500)
@@ -127,11 +153,16 @@ struct readStatistics {
   onCancel(){
 
   }
-  onAccept(){
-    this.bookList=this.bookList.filter(item=>item.status!=true)
-    this.bookList.forEach(item=>console.log(item.status+"--"))
+  async onAccept(){
+    const selected = this.bookList.filter(item=>item.status==true)
+    for (let i = 0; i < selected.length; i++) {
+      const item = selected[i]
+      if (item.id > 0) {
+        await bookHistoryDao.deleteBookHistory(item.id)
+      }
+    }
     this.delStatus=!this.delStatus
-
+    await this.loadBookList()
   }
   exitApp() {
     this.delDialog = false
@@ -151,6 +182,7 @@ struct readStatistics {
   })
   aboutToAppear(): void {
       console.log(this.type+"------")
+      this.loadBookList()
   }
 
 }

@@ -75,17 +75,12 @@ struct  WebDav{
             .borderRadius(10)
             .onClick(()=>{
               promptAction.showToast({
-                message: '登录成功',
-                duration: 1000,
+                message: '登录成功，文件管理功能已下线',
+                duration: 2000,
               })
               setTimeout(()=>{
-                router.pushUrl({
-                  url: "pages/view/myCenter/FileManagement",
-                  params:{
-                    webDavStatus:1
-                  }
-                })
-              },2000)
+                router.back()
+              },1500)
             })
 
         }.width("100%").height("95%")
