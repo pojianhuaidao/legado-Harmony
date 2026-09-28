@@ -1,5 +1,4 @@
 # [English](English.md) [中文](README.md)
-
 <a href="https://jb.gg/OpenSourceSupport" target="_blank">
 <img width="24" height="24" src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg?_gl=1*135yekd*_ga*OTY4Mjg4NDYzLjE2Mzk0NTE3MzQ.*_ga_9J976DJZ68*MTY2OTE2MzM5Ny4xMy4wLjE2NjkxNjMzOTcuNjAuMC4w&_ga=2.257292110.451256242.1669085120-968288463.1639451734" alt="idea"/>
 </a>
@@ -12,16 +11,9 @@ Legado / 开源阅读
 Legado is a free and open source novel reader for Harmony OS.
 </div>
 
-# Sponsor
-
-> 感谢 [PiPio 中转站](https://pipio.io/offer/miaogongzi) 对项目的赞助支持。
 
 [![](https://img.shields.io/badge/-Contents:-696969.svg)](#contents) [![](https://img.shields.io/badge/-Function-F5F5F5.svg)](#Function-主要功能-) [![](https://img.shields.io/badge/-Community-F5F5F5.svg)](#Community-交流社区-) [![](https://img.shields.io/badge/-API-F5F5F5.svg)](#API-) [![](https://img.shields.io/badge/-Other-F5F5F5.svg)](#Other-其他-) [![](https://img.shields.io/badge/-Grateful-F5F5F5.svg)](#Grateful-感谢-) [![](https://img.shields.io/badge/-Interface-F5F5F5.svg)](#Interface-界面-)
 
-# 由于盗版猖獗，各种盗版层出不穷，所以鸿蒙版包括后续Flutter重构安卓、iOS版将不再开源！！！！！
-# 本仓库将用于分发Hap安装包，见[release](https://github.com/mgz0227/legado-Harmony/releases/latest)
-# 私有仓库地址：[开源阅读](https://github.com/mgz0227/Harmony-Legado)
-# 如有希望加入开发团队的，请邮件至：miaogongzi0227@gmail.com 并提供你的开发经历以及相关作品以供核实！！！
 # 开发人员详见：[Contributors](https://github.com/mgz0227/legado-Harmony/graphs/contributors)
 # Function-主要功能 [![](https://img.shields.io/badge/-Function-F5F5F5.svg)](#Function-主要功能-)
 [English](English.md)
