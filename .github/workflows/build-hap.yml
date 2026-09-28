@@ -20,7 +20,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # 鍗庝负瀹樻柟 Command Line Tools 26.0.0.851锛堝唴鍚?HarmonyOS SDK 26 + hvigor 6.26.8 + ohpm + node锛?      # 鐩撮摼浠庡崕涓哄紑鍙戣€呬笅杞戒腑蹇冭幏鍙栵紝绛惧悕鍙傛暟鏈夋晥鏈熺害 10 骞达紝鏃犻渶鐧诲綍銆?      - name: Download HarmonyOS Command Line Tools
+      # 华为官方 Command Line Tools 26.0.0.851（内含 HarmonyOS SDK 26 + hvigor 6.26.8 + ohpm + node）
+      # 直链从华为开发者下载中心获取，签名参数有效期约 10 年，无需登录。
+      - name: Download HarmonyOS Command Line Tools
         run: |
           curl -fL --retry 5 --retry-all-errors -A 'Mozilla/5.0' -o /tmp/clt.zip \
             "https://contentcenter-vali-drcn.dbankcdn.cn/pvt_2/DeveloperAlliance_package_901_9/de/v3/kICkkkAeThGTxoJ0yD55vA/commandline-tools-linux-x64-26.0.0.851.zip?HW-CC-KV=V1&HW-CC-Date=20260928T072229Z&HW-CC-Expire=315360000&HW-CC-Sign=9F0371E2E668EC958BA13AD6A7CC92BD194360AF545FFE6070A12FE905B027A1"
@@ -29,13 +31,17 @@ jobs:
           ls "$HOME/clt/command-line-tools"
           cat "$HOME/clt/command-line-tools/version.txt"
 
-      # 宸ョ▼ hvigorfile.ts 閫氳繃 '@ohos/hvigor-ohos-plugin' 瑙ｆ瀽鏋勫缓鎻掍欢锛?      # 灏嗗伐鍏烽摼鍐呯疆鎻掍欢杞摼鍒板伐绋?node_modules锛屼繚璇?hvigor 6.26.8 鍙洿鎺ュ姞杞姐€?      - name: Link hvigor plugins to project
+      # 工程 hvigorfile.ts 通过 '@ohos/hvigor-ohos-plugin' 解析构建插件，
+      # 将工具链内置插件软链到工程 node_modules，保证 hvigor 6.26.8 可直接加载。
+      - name: Link hvigor plugins to project
         run: |
           mkdir -p node_modules/@ohos
           ln -sfn "$HOME/clt/command-line-tools/hvigor/hvigor" node_modules/@ohos/hvigor
           ln -sfn "$HOME/clt/command-line-tools/hvigor/hvigor-ohos-plugin" node_modules/@ohos/hvigor-ohos-plugin
 
-      # 宸ョ▼ signingConfigs 鎸囧悜鏈満绛惧悕鏂囦欢锛坙egado.p12 绛夛級锛孋I 鏃犳鏂囦欢锛?      # 鏋勫缓鍓嶇Щ闄ょ鍚嶉厤缃紝浜у嚭 unsigned HAP锛屽彲鐩存帴渚ц浇銆?      - name: Strip local signing config
+      # 工程 signingConfigs 指向本机签名文件（legado.p12 等），CI 无此文件，
+      # 构建前移除签名配置，产出 unsigned HAP，可直接侧载。
+      - name: Strip local signing config
         run: |
           python3 - <<'EOF'
           import json, re
