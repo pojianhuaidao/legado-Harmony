@@ -37,14 +37,14 @@ struct CrashLogPage {
       const list: CrashLogItem[] = []
       for (const log of logs) {
         const typeText: string = this.faultTypeText(log.type)
-        const timeText: string = this.extractTime(log.logPath)
+        const timeText: string = dayjs(log.timestamp).format('YYYY-MM-DD HH:mm:ss')
         list.push({
           timeText: timeText,
           typeText: typeText,
           module: log.module,
           reason: log.reason,
           summary: log.summary,
-          stack: '',
+          stack: log.fullLog ?? '',
           expanded: false
         })
       }
@@ -70,17 +70,6 @@ struct CrashLogPage {
       default:
         return '其他'
     }
-  }
-
-  extractTime(logPath: string): string {
-    const m = logPath.match(/(\d{8})-(\d{6})/)
-    if (m && m[1] && m[2]) {
-      const d: string = m[1]
-      const t: string = m[2]
-      return d.substring(0, 4) + '-' + d.substring(4, 6) + '-' + d.substring(6, 8) +
-        ' ' + t.substring(0, 2) + ':' + t.substring(2, 4) + ':' + t.substring(4, 6)
-    }
-    return '时间未知'
   }
 
   build() {
