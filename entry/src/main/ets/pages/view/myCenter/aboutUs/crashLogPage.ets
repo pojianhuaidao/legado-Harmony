@@ -33,9 +33,9 @@ struct CrashLogPage {
     this.loading = true
     this.errorText = ''
     try {
-      const logs: Array<faultLogger.LogInfo> = await faultLogger.querySelfFaultLog(faultLogger.FaultType.NO_SPECIFIC)
+      const logs = await faultLogger.querySelfFaultLog(faultLogger.FaultType.NO_SPECIFIC)
       const list: CrashLogItem[] = []
-      logs.forEach((log: faultLogger.LogInfo) => {
+      for (const log of logs) {
         const typeText: string = this.faultTypeText(log.type)
         const timeText: string = dayjs(log.time ?? Date.now()).format('YYYY-MM-DD HH:mm:ss')
         list.push({
@@ -47,7 +47,7 @@ struct CrashLogPage {
           stack: log.stack ?? '',
           expanded: false
         })
-      })
+      }
       this.crashList = list
       if (!this.crashList.length) {
         this.errorText = '暂无崩溃日志'
