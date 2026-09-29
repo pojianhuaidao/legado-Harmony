@@ -1,4 +1,5 @@
 import { promptAction, router } from '@kit.ArkUI';
+import { common } from '@kit.AbilityKit';
 import { ThemeItem } from '../../../common/model/Theme';
 import { ThemeStorageKey } from '../../../common/constants/Theme';
 import webdavClient, { WebdavConfig, WebdavItem } from '../../../common/utils/WebdavClient';
@@ -23,7 +24,8 @@ struct WebDavFileList {
   private bookTypes: string[] = ['txt', 'epub', 'pdf']
 
   aboutToAppear() {
-    this.filesDir = getContext(this).filesDir
+    const ctx = getContext(this) as common.UIAbilityContext
+    this.filesDir = ctx.filesDir
     const host = bookDataPreferences.get('webdav_host')
     const account = bookDataPreferences.get('webdav_account')
     const password = bookDataPreferences.get('webdav_password')
@@ -142,7 +144,7 @@ struct WebDavFileList {
   FileItemView(item: WebdavItem) {
     Row({ space: 12 }) {
       if (item.isDir) {
-        Image($r('app.media.my_center_file_icon'))
+        Image($r('app.media.folder'))
           .width(36)
           .height(36)
       } else {

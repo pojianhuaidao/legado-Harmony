@@ -153,7 +153,7 @@ class WebdavClient {
     } catch (err) {
       const e = err as BusinessError;
       console.error('WebdavClient listDir failed: ', JSON.stringify(e));
-      throw err;
+      throw e;
     }
   }
 
