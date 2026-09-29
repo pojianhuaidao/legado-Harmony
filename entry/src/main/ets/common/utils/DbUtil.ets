@@ -213,7 +213,9 @@ class DbUtil {
           reject(err);
         } else {
           Logger.debug(`[${CommonConstants.RDB_TAG}]`,'查询成功！查询行数：', result.rowCount.toString());
-          resolve(result.rowCount);
+          // rowCount 在结果集为空时可能返回 -1（表示未知/无效），统一按 0 处理，避免 UI 出现负数计数
+          const count = result.rowCount
+          resolve(count > 0 ? count : 0);
         }
       })
     });

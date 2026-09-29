@@ -13,8 +13,9 @@ import { isNetworkUrl } from '../../utils/utils';
 export class ExploreParser {
   /**
    * 解析发现页（支持分页 url 已由调用方替换好 {{page}}）
+   * @param jsLib 书源 jsLib，发现规则中 @js: / {{}} 表达式依赖的 JS 库（与搜索链路 XmlAnalysis 对齐）
    */
-  async parse(bookSourceUrl: string, url: string, exploreRule: ExploreRule): Promise<ExploreRule[]> {
+  async parse(bookSourceUrl: string, url: string, exploreRule: ExploreRule, jsLib?: string): Promise<ExploreRule[]> {
     const list: ExploreRule[] = [];
     if (!exploreRule) {
       return list;
@@ -25,7 +26,12 @@ export class ExploreParser {
     try {
       html = await requestUtil.requestHtml(config);
     } catch (e) {
-      return list;
+      // 兜底：POST/object 响应（与 XmlAnalysis 搜索链路保持一致）
+      try {
+        html = await requestUtil.requestUrlHtml(url);
+      } catch (e2) {
+        html = '';
+      }
     }
     if (html.length === 0) {
       return list;
@@ -33,6 +39,9 @@ export class ExploreParser {
     // 2. 本地规则解析
     const analyzer = new RuleAnalyzer();
     analyzer.setBaseUrl(bookSourceUrl);
+    if (jsLib && jsLib.length > 0) {
+      analyzer.setJsLib(jsLib);
+    }
     const ruleMap: Record<string, string> = {};
     const src = exploreRule as Record<string, string | undefined>;
     const keys = Object.keys(src);

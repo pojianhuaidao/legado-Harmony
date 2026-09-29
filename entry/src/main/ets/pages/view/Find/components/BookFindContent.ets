@@ -25,6 +25,7 @@ export default struct BookFindContent {
   @State errorExplore: boolean = false
   @State bookList: ExploreRule[] = []
   @Prop exploreRule: ExploreRule = {}
+  @Prop jsLib: string = ''
   handleClick: () => void = () => {
   }
   // 主题颜色
@@ -40,7 +41,7 @@ export default struct BookFindContent {
     if (!isNetworkUrl(url)) {
       url = this.bookSourceUrl + url
     }
-    exploreParser.parse(this.bookSourceUrl, url, this.exploreRule).then((bookList: ExploreRule[]) => {
+    exploreParser.parse(this.bookSourceUrl, url, this.exploreRule, this.jsLib).then((bookList: ExploreRule[]) => {
       this.bookList = bookList
       this.loading = false
       this.errorExplore = false
@@ -102,6 +103,7 @@ export default struct BookFindContent {
                     bookSourceUrl: this.bookSourceUrl,
                     exploreItem: this.exploreItem,
                     exploreRule: this.exploreRule,
+                    jsLib: this.jsLib,
                     currentIndex: this.currentIndex
                   }
                 })

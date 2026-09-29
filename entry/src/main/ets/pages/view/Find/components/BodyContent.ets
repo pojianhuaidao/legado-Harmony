@@ -50,7 +50,7 @@ export default struct BodyContent {
         }
         try {
           const arr = JSON.parse(raw) as ExploreItem[]
-          return Array.isArray(arr) && arr.length > 0
+          return arr instanceof Array && arr.length > 0
         } catch (e) {
           return false
         }
