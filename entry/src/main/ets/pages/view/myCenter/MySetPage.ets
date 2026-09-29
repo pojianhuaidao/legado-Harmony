@@ -492,13 +492,7 @@ struct MySetPage{
       webview.WebCookieManager.clearAllCookies()
         .then(() => {
           webview.WebStorage.deleteAllData()
-            .then(() => {
-              showMessage('WebView 数据已清除')
-            })
-            .catch((err: Error) => {
-              console.error('clearAllCookies err: ' + JSON.stringify(err))
-              showMessage('清除失败')
-            })
+          showMessage('WebView 数据已清除')
         })
         .catch((err: Error) => {
           console.error('clearAllCookies err: ' + JSON.stringify(err))
