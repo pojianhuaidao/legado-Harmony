@@ -140,9 +140,7 @@ struct RssWebView {
         Web({ src: this.sourcesUrl||'www.baidu.com', controller: this.controller })
           .domStorageAccess(true)
           .javaScriptAccess(true)
-          .cacheMode(webview.CacheMode.Default)
-          .mixedMode(webview.MixedMode.All)
-          .onProgressChange((event: webview.OnProgressChangeEvent) => {
+          .onProgressChange((event) => {
             this.webProgress = event.newProgress
           })
           .onPageBegin((event) => {
