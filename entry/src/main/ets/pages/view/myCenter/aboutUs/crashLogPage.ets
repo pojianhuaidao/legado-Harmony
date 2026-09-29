@@ -33,9 +33,9 @@ struct CrashLogPage {
     this.loading = true
     this.errorText = ''
     try {
-      const logs: Array<FaultLogger.LogInfo> = await FaultLogger.querySelfFaultLog(FaultLogger.FaultType.NO_SPECIFIC)
+      const logs: Array<faultLogger.LogInfo> = await faultLogger.querySelfFaultLog(faultLogger.FaultType.NO_SPECIFIC)
       const list: CrashLogItem[] = []
-      logs.forEach((log: FaultLogger.LogInfo) => {
+      logs.forEach((log: faultLogger.LogInfo) => {
         const typeText: string = this.faultTypeText(log.type)
         const timeText: string = dayjs(log.time ?? Date.now()).format('YYYY-MM-DD HH:mm:ss')
         list.push({
