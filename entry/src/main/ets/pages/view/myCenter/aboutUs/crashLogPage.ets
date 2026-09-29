@@ -1,4 +1,4 @@
-import { faultLogger } from '@kit.PerformanceAnalysisKit'
+import { FaultLogger } from '@kit.PerformanceAnalysisKit'
 import dayjs from 'dayjs'
 import { router } from '@kit.ArkUI';
 import { ThemeStorageKey } from '../../../../common/constants/Theme';
@@ -33,9 +33,9 @@ struct CrashLogPage {
     this.loading = true
     this.errorText = ''
     try {
-      const logs: Array<faultLogger.LogInfo> = await faultLogger.querySelfFaultLog(faultLogger.FaultType.NO_SPECIFIC)
+      const logs: Array<FaultLogger.LogInfo> = await FaultLogger.querySelfFaultLog(FaultLogger.FaultType.NO_SPECIFIC)
       const list: CrashLogItem[] = []
-      logs.forEach((log: faultLogger.LogInfo) => {
+      logs.forEach((log: FaultLogger.LogInfo) => {
         const typeText: string = this.faultTypeText(log.type)
         const timeText: string = dayjs(log.time ?? Date.now()).format('YYYY-MM-DD HH:mm:ss')
         list.push({
@@ -61,17 +61,17 @@ struct CrashLogPage {
 
   faultTypeText(type: number): string {
     switch (type) {
-      case faultLogger.FaultType.JS_CRASH:
+      case FaultLogger.FaultType.JS_CRASH:
         return 'JS崩溃'
-      case faultLogger.FaultType.CPP_CRASH:
+      case FaultLogger.FaultType.CPP_CRASH:
         return 'C++崩溃'
-      case faultLogger.FaultType.APP_FREEZE:
+      case FaultLogger.FaultType.APP_FREEZE:
         return '应用无响应'
-      case faultLogger.FaultType.LAUNCH_TIMEOUT:
+      case FaultLogger.FaultType.LAUNCH_TIMEOUT:
         return '启动超时'
-      case faultLogger.FaultType.CPP_FREEZE:
+      case FaultLogger.FaultType.CPP_FREEZE:
         return 'C++无响应'
-      case faultLogger.FaultType.APP_TIMEOUT:
+      case FaultLogger.FaultType.APP_TIMEOUT:
         return '应用超时'
       default:
         return '其他'
