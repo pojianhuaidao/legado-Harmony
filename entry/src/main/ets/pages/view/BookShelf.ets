@@ -1,6 +1,6 @@
 import ReadShow from '../../componets/common/ReadShow'
 import IndexShelf from './bookShelf/IndexShelf'
-import { DARK_BG, LIGHT_BG } from '../../../common/utils/ThemeModeManager'
+import { DARK_BG, LIGHT_BG } from '../../common/utils/ThemeModeManager'
 
 @Component
 export default struct BookShelf {

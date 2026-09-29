@@ -80,6 +80,13 @@ function parseLegacyExploreUrl(raw: string): ExploreItem[] {
     } else if (line.startsWith('@js:') || line.indexOf('=') > -1) {
       // @js: 动态生成式 exploreUrl：端侧无法执行时跳过该条（不阻塞其它条目）
       continue;
+    } else if (line.startsWith('http://') || line.startsWith('https://') || line.startsWith('/')) {
+      // 纯 URL 行（每行一个分类 URL）：安卓 legado 也支持该格式，作为独立发现条目
+      out.push({
+        title: line,
+        url: line,
+        style: undefined
+      });
     }
   }
   return out;

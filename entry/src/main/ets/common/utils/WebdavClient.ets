@@ -81,7 +81,7 @@ class WebdavClient {
         'Authorization': this.authHeader(config),
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
         'Accept-Encoding': 'gzip, deflate',
-        ...(method === 'PROPFIND' ? { 'Depth': '1' } : {})
+        'Depth': method === 'PROPFIND' ? '1' : ''
       },
       timeout: timeout
     };
@@ -153,7 +153,7 @@ class WebdavClient {
     } catch (err) {
       const e = err as BusinessError;
       console.error('WebdavClient listDir failed: ', JSON.stringify(e));
-      throw e;
+      throw new Error(`WebDAV listDir failed: ${e.message}`);
     }
   }
 

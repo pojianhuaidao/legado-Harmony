@@ -26,9 +26,9 @@ struct WebDavFileList {
   aboutToAppear() {
     const ctx = getContext(this) as common.UIAbilityContext
     this.filesDir = ctx.filesDir
-    const host = bookDataPreferences.get('webdav_host')
-    const account = bookDataPreferences.get('webdav_account')
-    const password = bookDataPreferences.get('webdav_password')
+    const host = bookDataPreferences.shared.get('webdav_host')
+    const account = bookDataPreferences.shared.get('webdav_account')
+    const password = bookDataPreferences.shared.get('webdav_password')
     if (host && account && password) {
       this.config = new WebdavConfig(String(host), String(account), String(password))
       this.loadDir('legado')

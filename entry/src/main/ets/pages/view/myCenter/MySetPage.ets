@@ -513,7 +513,7 @@ struct MySetPage{
   /** 从持久化设置恢复开关状态 */
   aboutToAppear() {
     // 无损删除历史遗留的"用户代理"持久化字段
-    bookDataPreferences.delete('setUserAgent');
+    bookDataPreferences.shared.delete('setUserAgent');
     this.setRefresh = settingsManager.getBool(MySetConstants.SET_REFRESH)
     this.setJump = settingsManager.getBool(MySetConstants.SET_JUMP)
     this.setReplace = settingsManager.getBool(MySetConstants.SET_REPLACE)

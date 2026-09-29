@@ -49,9 +49,9 @@ struct WebDav {
 
   /** 读取已保存的 WebDAV 凭据 */
   private loadSavedConfig(): boolean {
-    const savedHost = bookDataPreferences.get('webdav_host')
-    const savedAccount = bookDataPreferences.get('webdav_account')
-    const savedPassword = bookDataPreferences.get('webdav_password')
+    const savedHost = bookDataPreferences.shared.get('webdav_host')
+    const savedAccount = bookDataPreferences.shared.get('webdav_account')
+    const savedPassword = bookDataPreferences.shared.get('webdav_password')
     if (savedHost && savedAccount && savedPassword) {
       this.host = String(savedHost)
       this.account = String(savedAccount)
@@ -63,9 +63,9 @@ struct WebDav {
 
   /** 保存 WebDAV 凭据（会话保持） */
   private saveConfig(): void {
-    bookDataPreferences.set('webdav_host', this.host)
-    bookDataPreferences.set('webdav_account', this.account)
-    bookDataPreferences.set('webdav_password', this.password)
+    bookDataPreferences.shared.set('webdav_host', this.host)
+    bookDataPreferences.shared.set('webdav_account', this.account)
+    bookDataPreferences.shared.set('webdav_password', this.password)
   }
 
   /** 进入文件列表页 */

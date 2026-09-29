@@ -28,9 +28,9 @@ export class ThemeModeManager {
   }
 
   /** 返回切换后的深色状态（true=深色） */
-  static toggle(theme: ThemeItem, index: number): boolean {
-    const dark: boolean = !this.isDark
-    this.setDark(dark)
+  toggle(theme: ThemeItem, index: number): boolean {
+    const dark: boolean = !ThemeModeManager.isDark
+    ThemeModeManager.setDark(dark)
     if (dark) {
       const darkTheme: ThemeItem = {
         text: theme.text + '·深色',

@@ -1,6 +1,6 @@
 import IndexSubscription from './Subscription/IndexSubscription'
 import SubscriptionIndex from './Subscription/SubscriptionIndex'
-import { DARK_BG, LIGHT_BG } from '../../../common/utils/ThemeModeManager'
+import { DARK_BG, LIGHT_BG } from '../../common/utils/ThemeModeManager'
 
 @Component
 export default struct Subscription {
