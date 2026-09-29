@@ -10,7 +10,9 @@ import sourceType from '../../../../componets/common/sourceType'
 import SourceCommon from '../../../../componets/source/SourceCommon'
 import BookSourceDao from '../../../../database/dao/BookSourceDao'
 import { BookSource } from '../../../../database/entities/BookSource'
+import { ExploreItem } from '../../../../database/types/BookSourceType'
 import ContentRefresh from './ContentRefresh'
+import { JSON } from '@kit.ArkTS'
 
 @Component
 export default struct BodyContent {
@@ -38,11 +40,23 @@ export default struct BodyContent {
     BookSourceDao.search({
       type: [0, 2, 1][this.currentIndex],
       enabled: true,
-      hasExploreUrl: true,
-      showExplore: true
+      hasExploreUrl: true
     }).then(bookSources => {
-      console.info('TagInfo', JSON.stringify(bookSources.slice(0, 3)))
-      this.sourceList = bookSources
+      // 过滤掉 exploreUrl 为空数组的伪发现源，确保每个 Tab 都有实际可展示内容
+      const valid = bookSources.filter((s: BookSource) => {
+        const raw = s.exploreUrl ?? ''
+        if (!raw.trim()) {
+          return false
+        }
+        try {
+          const arr = JSON.parse(raw) as ExploreItem[]
+          return Array.isArray(arr) && arr.length > 0
+        } catch (e) {
+          return false
+        }
+      })
+      console.info('TagInfo', JSON.stringify(valid.slice(0, 3)))
+      this.sourceList = valid
       this.loading = false
     }).catch(() => {
       this.loading = false

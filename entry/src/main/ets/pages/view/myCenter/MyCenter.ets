@@ -11,6 +11,12 @@ import { image } from '@kit.ImageKit'
 import { resourceManager } from '@kit.LocalizationKit'
 import { BusinessError } from '@kit.BasicServicesKit'
 import ReadingDurationUtil from '../../../common/utils/ReadingDurationUtil'
+import booksDao from '../../../database/dao/BooksDao'
+import bookHistoryDao from '../../../database/dao/BookHistoryDao'
+import { Books } from '../../../database/entities/Books'
+import DbUtil from '../../../common/utils/DbUtil'
+import AppDatabaseUtil from '../../../database/AppDatabaseUtil'
+import { ColumnInfo } from '../../../database/types/ColumnInfo'
 
 @Entry
 @Component
@@ -18,9 +24,9 @@ export default struct MyCenter {
 
   @State reading_time:number = 0
   @State head_list:dataItem[]=[
-    new dataItem("读过",20),
-    new dataItem("读完",20),
-    new dataItem("书签",20),
+    new dataItem("读过",0),
+    new dataItem("读完",0),
+    new dataItem("书签",0),
   ]
   @State center_list:dataItem[]=[
     new dataItem("备份",1,$r("app.media.my_center_cloud_icon")),
@@ -42,14 +48,51 @@ export default struct MyCenter {
 
   aboutToAppear(): void {
     this.refreshReadingTime()
+    this.refreshHeadList()
   }
 
   onPageShow(): void {
     this.refreshReadingTime()
+    this.refreshHeadList()
   }
 
   refreshReadingTime(): void {
     this.reading_time = ReadingDurationUtil.getTodayMinutes()
+  }
+
+  async refreshHeadList(): Promise<void> {
+    try {
+      const history = await bookHistoryDao.search({})
+      const readCount = history.length
+      let finishedCount = 0
+      const shelfBooks = await booksDao.search({}) as Books[]
+      shelfBooks.forEach((b: Books) => {
+        const total = b.totalChapterNum ?? 0
+        const current = b.durChapterIndex ?? 0
+        if (total > 0 && current >= total - 1) {
+          finishedCount++
+        }
+      })
+      let bookmarkCount = 0
+      try {
+        const column: ColumnInfo[] = AppDatabaseUtil.getColumn('bookmarks')
+        const predicates = DbUtil.getPredicates('bookmarks')
+        bookmarkCount = await DbUtil.queryForCount(predicates, column)
+      } catch (e) {
+        bookmarkCount = 0
+      }
+      this.head_list = [
+        new dataItem("读过", readCount),
+        new dataItem("读完", finishedCount),
+        new dataItem("书签", bookmarkCount),
+      ]
+    } catch (e) {
+      this.head_list = [
+        new dataItem("读过", 0),
+        new dataItem("读完", 0),
+        new dataItem("书签", 0),
+      ]
+    }
   }
 
   build() {

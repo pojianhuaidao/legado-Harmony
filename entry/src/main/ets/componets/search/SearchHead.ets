@@ -2,6 +2,7 @@ import { router } from '@kit.ArkUI';
 import taskSearchBooks from '../../common/model/taskSearchBook';
 import { SearchBook } from '../../database/entities/SearchBook';
 import { showMessage } from '../common/promptShow';
+import { SearchHistoryUtil } from '../../common/utils/SearchHistoryUtil';
 
 
 @Component
@@ -60,6 +61,7 @@ export struct SearchHead{
       showMessage('搜索内容不能为空')
       return
     }
+    SearchHistoryUtil.saveHistory(this.SearchValue)
     if (this.books.length === 0 || this.SearchValue !== this.lastSearch) {
       this.SearchStatus = 1
     }

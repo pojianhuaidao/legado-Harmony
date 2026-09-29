@@ -115,6 +115,19 @@ export default struct ContentRefresh {
         .margin({
           top: PaddingConstants.PADDING_20
         })
+    } else if (this.showExploreList.length === 0) {
+      Column() {
+        Image($r('app.media.find_empty'))
+          .width(124)
+          .height(120)
+
+        Text('该书源暂无发现内容，请切换其他书源~')
+          .fontSize(14)
+          .fontColor('#73000000')
+          .margin({ top: 32 })
+      }
+      .justifyContent(FlexAlign.Center)
+      .layoutWeight(1)
     } else {
       Refresh({ refreshing: $$this.isRefreshing, builder: this.refreshComponent }) {
         Scroll() {

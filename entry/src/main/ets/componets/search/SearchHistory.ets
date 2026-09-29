@@ -1,12 +1,33 @@
 
+import { SearchHistoryUtil } from '../../common/utils/SearchHistoryUtil'
+import { promptAction } from '@kit.ArkUI'
+
 @Component
 export struct SearchHistory{
 
-  @State  historyBookNames: String[] = ["仙逆","一念永恒","一念永恒","一念永恒", "一念永恒", "吞噬星空", "凡人修仙传", "夜的命名术", "夜的命名术", "一念永恒", "一念永恒", "一念永恒", "一念永恒", "一念永恒"]
-  @State rankingList: String[] = ["小说热搜榜", "漫画热搜榜", "听书热搜榜"]
+  @State historyBookNames: string[] = []
+  @State rankingList: string[] = ["小说热搜榜", "漫画热搜榜", "听书热搜榜"]
   @State rotateImages: number= 0;
   @State rotateState: boolean=false;
   scroller: Scroller = new Scroller()
+
+  aboutToAppear(): void {
+    this.loadHistory()
+  }
+
+  loadHistory(): void {
+    this.historyBookNames = SearchHistoryUtil.getHistory()
+  }
+
+  clearHistory(): void {
+    SearchHistoryUtil.clearHistory()
+    this.historyBookNames = []
+    promptAction.showToast({
+      message: '搜索历史已清空',
+      duration: 1500
+    })
+  }
+
   build() {
     Column() {
       //搜索历史
@@ -33,20 +54,39 @@ export struct SearchHistory{
           }
 
           Image("/common/images/search_del.svg").width(24).height(24).fillColor($r("app.color.search_launch"))
+            .onClick(() => {
+              if (this.historyBookNames.length > 0) {
+                this.clearHistory()
+              } else {
+                promptAction.showToast({
+                  message: '暂无搜索历史',
+                  duration: 1500
+                })
+              }
+            })
         }
       }.width("100%").padding({ top:10 });
 
       //历史记录
-      Flex({ direction: FlexDirection.Row, wrap: FlexWrap.Wrap }) {
-        ForEach(this.historyBookNames, (item: String, index) => {
-          Text(item.toString())
-            .padding({ top: 5, left: 15, right: 15})
-            .backgroundColor($r("app.color.search_history"))
-            .margin({ right: 10, bottom: 10 })
+      if (this.historyBookNames.length === 0) {
+        Column() {
+          Text("暂无搜索历史")
             .fontSize(13)
-        })
-      }.width("100%").height(this.rotateState?180:100)
-      .padding({ top: 10 ,bottom:10 }).clip(true);
+            .fontColor('#73000000')
+            .margin({ top: 20, bottom: 20 })
+        }.width("100%")
+      } else {
+        Flex({ direction: FlexDirection.Row, wrap: FlexWrap.Wrap }) {
+          ForEach(this.historyBookNames, (item: String, index) => {
+            Text(item.toString())
+              .padding({ top: 5, left: 15, right: 15})
+              .backgroundColor($r("app.color.search_history"))
+              .margin({ right: 10, bottom: 10 })
+              .fontSize(13)
+          })
+        }.width("100%").height(this.rotateState?180:100)
+        .padding({ top: 10 ,bottom:10 }).clip(true);
+      }
 
       //排行榜
       // Scroll(this.scroller) {
