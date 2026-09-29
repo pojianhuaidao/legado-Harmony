@@ -1,4 +1,4 @@
-import { FaultLogger } from '@kit.PerformanceAnalysisKit'
+import faultLogger from '@ohos.faultLogger'
 import dayjs from 'dayjs'
 import { router } from '@kit.ArkUI';
 import { ThemeStorageKey } from '../../../../common/constants/Theme';
@@ -61,18 +61,12 @@ struct CrashLogPage {
 
   faultTypeText(type: number): string {
     switch (type) {
-      case FaultLogger.FaultType.JS_CRASH:
+      case faultLogger.FaultType.JS_CRASH:
         return 'JS崩溃'
-      case FaultLogger.FaultType.CPP_CRASH:
+      case faultLogger.FaultType.CPP_CRASH:
         return 'C++崩溃'
-      case FaultLogger.FaultType.APP_FREEZE:
+      case faultLogger.FaultType.APP_FREEZE:
         return '应用无响应'
-      case FaultLogger.FaultType.LAUNCH_TIMEOUT:
-        return '启动超时'
-      case FaultLogger.FaultType.CPP_FREEZE:
-        return 'C++无响应'
-      case FaultLogger.FaultType.APP_TIMEOUT:
-        return '应用超时'
       default:
         return '其他'
     }
