@@ -802,7 +802,7 @@ export default struct SourceView {
           .checkboxShape(CheckBoxShape.CIRCLE)
           .selectedColor(this.theme.mainColor)
           .onChange((result: CheckboxGroupResult) => {
-            const groupAllSelected: boolean = result.status === SelectStatus.ALL || result.status === SelectStatus.PART
+            const groupAllSelected: boolean = result.status === SelectStatus.All || result.status === SelectStatus.Part
             item.list.forEach((s: BookSourcePart) => {
               this.activeNameMap[s.bookSourceUrl] = groupAllSelected
             })

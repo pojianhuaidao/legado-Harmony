@@ -1,4 +1,4 @@
-import { faultLogger } from '@kit.BasicServicesKit'
+import { faultLogger } from '@kit.PerformanceAnalysisKit'
 import dayjs from 'dayjs'
 import { router } from '@kit.ArkUI';
 import { ThemeStorageKey } from '../../../../common/constants/Theme';
