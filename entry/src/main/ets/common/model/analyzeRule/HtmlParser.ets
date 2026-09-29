@@ -93,8 +93,13 @@ export interface CssSegment {
   id: string;
   classes: string[];
   attrs: Record<string, string>;
+  // 属性部分匹配：{attr: '^=值' | '$=值' | '*=值'}（匹配模式存值首字符，完整值存 attrs）
+  attrMode: Record<string, string>;
   index: number; // -1 表示不限制
   directChild: boolean; // 是否要求直接子节点（>）
+  // 伪类：nth-child 序号（1-based，-2 表示 last-child，-3 表示 first-child，-4 表示 eq）
+  pseudoType: number; // 0=无 1=nth-child 2=last-child 3=first-child
+  pseudoIndex: number; // nth-child/eq 的序号
 }
 
 /**
@@ -305,12 +310,77 @@ export class SelectorEngine {
       } else {
         current = this.matchDescendants(current, seg);
       }
+      current = this.applyPseudo(current, seg);
       current = this.applyIndex(current, seg);
       if (current.length === 0) {
         return [];
       }
     }
     return current;
+  }
+
+  /**
+   * 应用伪类过滤（基于父节点中的元素序号）：
+   *  - nth-child(N)：父元素下第 N 个元素子节点（1-based）
+   *  - :eq(N)：父元素下第 N 个元素子节点（0-based，负数从末尾倒数）
+   *  - :first-child / :last-child
+   */
+  private applyPseudo(nodes: HtmlNode[], seg: CssSegment): HtmlNode[] {
+    if (seg.pseudoType === 0) {
+      return nodes;
+    }
+    const out: HtmlNode[] = [];
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      const parent = node.parent;
+      if (parent === null || parent === undefined) {
+        continue;
+      }
+      // 统计父节点下元素子节点（跳过 #text / #root）
+      const elemChildren: HtmlNode[] = [];
+      for (let j = 0; j < parent.children.length; j++) {
+        const c = parent.children[j];
+        if (c.tagName !== '#text' && c.tagName !== '#root') {
+          elemChildren.push(c);
+        }
+      }
+      let elemPos = -1;
+      for (let j = 0; j < elemChildren.length; j++) {
+        if (elemChildren[j] === node) {
+          elemPos = j;
+          break;
+        }
+      }
+      if (elemPos < 0) {
+        continue;
+      }
+      if (seg.pseudoType === 2) {
+        // last-child
+        if (elemPos === elemChildren.length - 1) {
+          out.push(node);
+        }
+        continue;
+      }
+      if (seg.pseudoType === 3) {
+        // first-child
+        if (elemPos === 0) {
+          out.push(node);
+        }
+        continue;
+      }
+      // nth-child / eq
+      if (seg.pseudoIndex >= 0) {
+        if (elemPos === seg.pseudoIndex) {
+          out.push(node);
+        }
+      } else {
+        const realIdx = elemChildren.length + seg.pseudoIndex;
+        if (realIdx >= 0 && realIdx === elemPos) {
+          out.push(node);
+        }
+      }
+    }
+    return out;
   }
 
   /**
@@ -463,32 +533,76 @@ export class SelectorEngine {
       id: '',
       classes: [],
       attrs: {},
+      attrMode: {},
       index: -1,
-      directChild: false
+      directChild: false,
+      pseudoType: 0,
+      pseudoIndex: 0
     };
     let rest = segStr;
+    // 伪类：:first-child / :last-child / :nth-child(N) / :eq(N)
+    const nthMatch = rest.match(/:nth-child\(\s*(\d+)\s*\)/);
+    if (nthMatch !== null) {
+      seg.pseudoType = 1;
+      seg.pseudoIndex = parseInt(nthMatch[1], 10) - 1; // nth-child(1)=第1个 -> 0-based
+      rest = rest.replace(/:nth-child\(\s*\d+\s*\)/, '');
+    } else {
+      const eqMatch = rest.match(/:eq\(\s*(-?\d+)\s*\)/);
+      if (eqMatch !== null) {
+        seg.pseudoType = 1;
+        seg.pseudoIndex = parseInt(eqMatch[1], 10); // eq(0)=第1个, eq(-1)=倒数第1个
+        rest = rest.replace(/:eq\(\s*-?\d+\s*\)/, '');
+      } else if (rest.indexOf(':first-child') > -1) {
+        seg.pseudoType = 3;
+        rest = rest.replace(/:first-child/, '');
+      } else if (rest.indexOf(':last-child') > -1) {
+        seg.pseudoType = 2;
+        rest = rest.replace(/:last-child/, '');
+      }
+    }
     // 索引 :N（数字）
     const idxMatch = rest.match(/:(\d+)$/);
     if (idxMatch !== null) {
       seg.index = parseInt(idxMatch[1], 10);
       rest = rest.substring(0, idxMatch.index);
     }
-    // 属性 [attr=value]
+    // 属性 [attr=value]（支持 ^= / $= / *= 部分匹配）
     const attrMatches = rest.match(/\[([^\]]+)\]/g);
     if (attrMatches !== null) {
       for (let i = 0; i < attrMatches.length; i++) {
         const inner = attrMatches[i].substring(1, attrMatches[i].length - 1);
-        const eq = inner.indexOf('=');
-        if (eq > 0) {
-          const k = inner.substring(0, eq).trim();
-          let v = inner.substring(eq + 1).trim();
+        let mode = '';
+        let eqPos = -1;
+        const caretIdx = inner.indexOf('^=');
+        const dollarIdx = inner.indexOf('$=');
+        const starIdx = inner.indexOf('*=');
+        if (caretIdx > -1) {
+          mode = '^';
+          eqPos = caretIdx;
+        } else if (dollarIdx > -1) {
+          mode = '$';
+          eqPos = dollarIdx;
+        } else if (starIdx > -1) {
+          mode = '*';
+          eqPos = starIdx;
+        } else {
+          eqPos = inner.indexOf('=');
+        }
+        if (eqPos > 0) {
+          const k = inner.substring(0, eqPos).trim();
+          let v = inner.substring(eqPos + (mode.length > 0 ? 2 : 1)).trim();
           if (v.startsWith('"') && v.endsWith('"')) {
             v = v.substring(1, v.length - 1);
           }
           if (v.startsWith('\'') && v.endsWith('\'')) {
             v = v.substring(1, v.length - 1);
           }
-          seg.attrs[k] = v;
+          if (mode.length > 0) {
+            seg.attrMode[k] = mode + v;
+            seg.attrs[k] = v;
+          } else {
+            seg.attrs[k] = v;
+          }
         } else {
           seg.attrs[inner.trim()] = '';
         }
@@ -594,6 +708,24 @@ export class SelectorEngine {
       const k = attrKeys[i];
       const expect = seg.attrs[k];
       const actual = node.attributes[k] || '';
+      const mode = seg.attrMode[k] || '';
+      if (mode.length > 0) {
+        const modeChar = mode.charAt(0);
+        if (modeChar === '^') {
+          if (!actual.startsWith(expect)) {
+            return false;
+          }
+        } else if (modeChar === '$') {
+          if (!actual.endsWith(expect)) {
+            return false;
+          }
+        } else if (modeChar === '*') {
+          if (actual.indexOf(expect) === -1) {
+            return false;
+          }
+        }
+        continue;
+      }
       if (expect.length > 0) {
         if (actual !== expect) {
           return false;
@@ -653,8 +785,11 @@ export class SelectorEngine {
       id: '',
       classes: [],
       attrs: {},
+      attrMode: {},
       index: -1,
-      directChild: false
+      directChild: false,
+      pseudoType: 0,
+      pseudoIndex: 0
     };
     let rest = segStr.trim();
     // [N] 索引

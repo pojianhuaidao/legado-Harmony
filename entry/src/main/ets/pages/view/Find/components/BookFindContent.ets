@@ -26,6 +26,8 @@ export default struct BookFindContent {
   @State bookList: ExploreRule[] = []
   @Prop exploreRule: ExploreRule = {}
   @Prop jsLib: string = ''
+  // 书源 header（JSON 字符串），发现页请求时合并
+  @Prop header: string = ''
   handleClick: () => void = () => {
   }
   // 主题颜色
@@ -41,7 +43,7 @@ export default struct BookFindContent {
     if (!isNetworkUrl(url)) {
       url = this.bookSourceUrl + url
     }
-    exploreParser.parse(this.bookSourceUrl, url, this.exploreRule, this.jsLib).then((bookList: ExploreRule[]) => {
+    exploreParser.parse(this.bookSourceUrl, url, this.exploreRule, this.jsLib, this.header).then((bookList: ExploreRule[]) => {
       this.bookList = bookList
       this.loading = false
       this.errorExplore = false
@@ -104,6 +106,7 @@ export default struct BookFindContent {
                     exploreItem: this.exploreItem,
                     exploreRule: this.exploreRule,
                     jsLib: this.jsLib,
+                    header: this.header,
                     currentIndex: this.currentIndex
                   }
                 })

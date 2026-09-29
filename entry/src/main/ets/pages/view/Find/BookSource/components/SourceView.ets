@@ -460,7 +460,7 @@ export default struct SourceView {
             List({ scroller: this.secondScroll }) {
               ForEach(this.groupList, (item: GroupPartList, index: number) => {
                 ListItemGroup({
-                  header: this.classifyHeader(`${item.title} (${item.list.length})`, index),
+                  header: this.classifyHeader(item, index),
                   space: 0
                 }) {
                   ForEach(item.list, (bookSource: BookSourcePart, j: number) => {
@@ -583,14 +583,33 @@ export default struct SourceView {
               .fontSize(12)
           }
           .layoutWeight(1)
-          .onClick(async () => {
-            if (!Object.values(this.activeNameMap).filter(o => o).length) {
-              return showMessage('请至少选择一个')
+          .onClick(() => {
+            const selectedCount = Object.values(this.activeNameMap).filter(o => o).length
+            if (!selectedCount) {
+              showMessage('请至少选择一个')
+              return
             }
-            await BookSourceDao.batchDelete(Object.keys(this.activeNameMap))
-            showMessage('删除成功')
-            this.activeNameMap = {}
-            this.getList()
+            AlertDialog.show({
+              title: '删除确认',
+              message: `确定删除选中的 ${selectedCount} 个书源吗？删除后不可恢复。`,
+              autoCancel: true,
+              primaryButton: {
+                value: '取消',
+                action: () => {
+                }
+              },
+              secondaryButton: {
+                value: '删除',
+                fontColor: '#E84026',
+                action: async () => {
+                  const keys: string[] = Object.keys(this.activeNameMap)
+                  await BookSourceDao.batchDelete(keys)
+                  showMessage(`已删除 ${keys.length} 个书源`)
+                  this.activeNameMap = {}
+                  this.getList()
+                }
+              }
+            })
           })
 
           Row().width(12)
@@ -765,9 +784,9 @@ export default struct SourceView {
 
   // 分类标题
   @Builder
-  classifyHeader(title: string, index: number) {
+  classifyHeader(item: GroupPartList, index: number) {
     Row() {
-      Text(title)
+      Text(`${item.title} (${item.list.length})`)
         .textAlign(TextAlign.Start)
         .height(48)
         .fontSize(16)
@@ -782,6 +801,12 @@ export default struct SourceView {
         CheckboxGroup({ group: 'checkboxGroup' + index })
           .checkboxShape(CheckBoxShape.CIRCLE)
           .selectedColor(this.theme.mainColor)
+          .onChange((result: CheckboxGroupResult) => {
+            const groupAllSelected: boolean = result.status === SelectStatus.ALL || result.status === SelectStatus.PART
+            item.list.forEach((s: BookSourcePart) => {
+              this.activeNameMap[s.bookSourceUrl] = groupAllSelected
+            })
+          })
       } else {
         Text('长按批量管理')
           .fontSize(12)

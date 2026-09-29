@@ -6,29 +6,51 @@
  */
 import { ExploreRule } from '../../../database/entities/rule';
 import { RuleAnalyzer } from '../analyzeRule/RuleAnalyzer';
-import { SearchConfig } from '../SearchConfig';
+import { SearchConfig, parseSearchString } from '../SearchConfig';
 import requestUtil from '../../utils/requestUtils';
 import { isNetworkUrl } from '../../utils/utils';
 
 export class ExploreParser {
   /**
    * 解析发现页（支持分页 url 已由调用方替换好 {{page}}）
-   * @param jsLib 书源 jsLib，发现规则中 @js: / {{}} 表达式依赖的 JS 库（与搜索链路 XmlAnalysis 对齐）
+   * 兼容安卓 legado exploreUrl 格式：
+   *  - 纯 URL
+   *  - URL,{"method":"POST","body":"...","charset":"utf-8","headers":"{...}","webView":true}
+   *  - URL@@method=POST@@body=...@@headers={...}
+   * @param jsLib 书源 jsLib，发现规则中 @js: / {{}} 表达式依赖的 JS 库
+   * @param sourceHeader 书源 header（JSON 字符串），合并到请求头
    */
-  async parse(bookSourceUrl: string, url: string, exploreRule: ExploreRule, jsLib?: string): Promise<ExploreRule[]> {
+  async parse(bookSourceUrl: string, url: string, exploreRule: ExploreRule, jsLib?: string, sourceHeader?: string): Promise<ExploreRule[]> {
     const list: ExploreRule[] = [];
     if (!exploreRule) {
       return list;
     }
-    // 1. 端侧抓取
-    const config = new SearchConfig('', 'GET', '', 'UTF-8', url, false);
+    // 1. 解析请求串（支持安卓 exploreUrl 的 JSON 配置 / @@ 语法）
+    const rawUrl = (url || '').trim();
+    let config: SearchConfig;
+    try {
+      config = parseSearchString(rawUrl);
+    } catch (e) {
+      config = new SearchConfig('', 'GET', '', 'UTF-8', rawUrl, false, '');
+    }
+    let targetUrl = config.path.length > 0 ? config.path : config.url;
+    if (targetUrl.length === 0) {
+      targetUrl = rawUrl;
+    }
+    // 相对路径拼接书源域名
+    if (!isNetworkUrl(targetUrl)) {
+      targetUrl = bookSourceUrl + targetUrl;
+    }
+    config.url = targetUrl;
+    config.path = targetUrl;
+    // 2. 端侧抓取
     let html = '';
     try {
-      html = await requestUtil.requestHtml(config);
+      html = await requestUtil.requestHtml(config, sourceHeader ?? '');
     } catch (e) {
       // 兜底：POST/object 响应（与 XmlAnalysis 搜索链路保持一致）
       try {
-        html = await requestUtil.requestUrlHtml(url);
+        html = await requestUtil.requestUrlHtml(targetUrl);
       } catch (e2) {
         html = '';
       }

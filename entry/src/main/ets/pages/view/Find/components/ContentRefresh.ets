@@ -139,6 +139,7 @@ export default struct ContentRefresh {
                 exploreItem: item,
                 exploreRule: this.exploreRule,
                 jsLib: this.bookSource.jsLib ?? '',
+                header: this.bookSource.header ?? '',
                 counter: this.counter,
                 handleClick: () => {
                   this.showSheet = true

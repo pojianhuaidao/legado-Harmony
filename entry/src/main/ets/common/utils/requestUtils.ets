@@ -9,16 +9,44 @@ import { util } from '@kit.ArkTS';
 
 class requestUtils{
 
-  async requestHtml(config: SearchConfig): Promise<string> {
+  /**
+   * 合并自定义请求头（JSON 字符串）到默认请求头。
+   * 优先级：默认 < sourceHeader（书源 header） < configHeaders（URL 配置 headers）
+   */
+  private mergeHeaders(configHeaders: string, sourceHeader: string): Record<string, string> {
+    const headers: Record<string, string> = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Cookie': this.generateRandomCookie(),
+      'Content-Encoding': 'gzip, deflate, br, zstd',
+      'Accept-Language': 'zh-CN,zh;q=0.9'
+    };
+    const merge = (jsonStr: string): void => {
+      if (!jsonStr || jsonStr.length === 0) {
+        return;
+      }
+      try {
+        const custom = JSON.parse(jsonStr) as Record<string, string>;
+        const keys = Object.keys(custom);
+        for (let i = 0; i < keys.length; i++) {
+          const v = custom[keys[i]];
+          if (v !== undefined && v !== null) {
+            headers[keys[i]] = String(v);
+          }
+        }
+      } catch (e) {
+        console.warn('requestUtils: 自定义请求头解析失败，已忽略', e);
+      }
+    };
+    merge(sourceHeader);
+    merge(configHeaders);
+    return headers;
+  }
+
+  async requestHtml(config: SearchConfig, sourceHeader: string = ''): Promise<string> {
     // 明确类型声明
     const requestOptions: AxiosRequestConfig = {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Cookie': this.generateRandomCookie(),
-        'Content-Encoding': 'gzip, deflate, br, zstd',
-        'Accept-Language': 'zh-CN,zh;q=0.9'
-      },
+      headers: this.mergeHeaders(config.headers, sourceHeader),
       responseType: 'array_buffer', // 使用 arraybuffer 以便处理不同编码的文本
       timeout: 5000
     };

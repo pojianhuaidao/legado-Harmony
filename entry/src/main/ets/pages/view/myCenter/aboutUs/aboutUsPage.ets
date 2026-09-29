@@ -49,7 +49,10 @@ struct AboutUsPage {
         })
         break
       case 3:
-      //todo 崩溃日志
+      //崩溃日志
+        router.pushUrl({
+          url: "pages/view/myCenter/aboutUs/crashLogPage"
+        })
         break
     }
   }

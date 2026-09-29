@@ -117,7 +117,9 @@ export class RuleAnalyzer {
     // 前缀 @ 规则（@js: @put: 等）不拆分
     if (rule.startsWith('@js:') || rule.startsWith('@put:') || rule.startsWith('@get:')
       || rule.startsWith('@cookie:') || rule.startsWith('@header:') || rule.startsWith('@baseUrl:')
-      || rule.startsWith('@default:') || rule.startsWith('@source:')) {
+      || rule.startsWith('@default:') || rule.startsWith('@source:') || rule.startsWith('@json:')
+      || rule.startsWith('@regex:') || rule.startsWith('@xpath:') || rule.startsWith('@css:')
+      || rule.startsWith('@replace:')) {
       sp.ruleContent = rule;
       return sp;
     }
@@ -253,6 +255,26 @@ export class RuleAnalyzer {
         return [v];
       }
       return [];
+    }
+    if (content.startsWith('@xpath:')) {
+      // 显式 XPath 前缀（legado @xpath://div/...）
+      return this.applyRegexToResult(this.parseSelectorBody(content.substring(7).trim(), source), rule);
+    }
+    if (content.startsWith('@css:')) {
+      // 显式 CSS 前缀（legado @css:div.item@text）
+      return this.applyRegexToResult(this.parseSelectorBody(content.substring(5).trim(), source), rule);
+    }
+    if (content.startsWith('@replace:')) {
+      // 正则/文本替换前缀（legado @replace:旧值##新值 或 @replace:regex##replacement）
+      const expr = content.substring(9).trim();
+      let reStr = expr;
+      let rep = '';
+      const sep = expr.indexOf('##');
+      if (sep > -1) {
+        reStr = expr.substring(0, sep);
+        rep = expr.substring(sep + 2);
+      }
+      return [this.applyRegex(source, reStr, rep)];
     }
     // && 拼接
     if (content.indexOf('&&') > -1) {

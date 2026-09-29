@@ -15,6 +15,7 @@ interface RouteParams {
   exploreItem: ExploreItem,
   exploreRule: ExploreRule,
   jsLib: string,
+  header: string,
   currentIndex: number
 }
 
@@ -28,6 +29,7 @@ struct CateGoryListPage {
   }
   @State exploreRule: ExploreRule = {}
   @State jsLib: string = ''
+  @State header: string = ''
   @State pageNum: number = 1
   @State pageSize: number = 10
   @State bookList: ExploreRule[] = []
@@ -48,6 +50,7 @@ struct CateGoryListPage {
     this.exploreItem = params.exploreItem
     this.exploreRule = params.exploreRule
     this.jsLib = params.jsLib ?? ''
+    this.header = params.header ?? ''
     await this.getList()
     this.startLoading = false
   }
@@ -62,7 +65,7 @@ struct CateGoryListPage {
     }
     this.loading = true
     try {
-      const bookList = await exploreParser.parse(this.bookSourceUrl, url, this.exploreRule, this.jsLib)
+      const bookList = await exploreParser.parse(this.bookSourceUrl, url, this.exploreRule, this.jsLib, this.header)
       if (this.pageNum === 1) {
         this.bookList = bookList
       } else {
