@@ -10,9 +10,8 @@ import sourceType from '../../../../componets/common/sourceType'
 import SourceCommon from '../../../../componets/source/SourceCommon'
 import BookSourceDao from '../../../../database/dao/BookSourceDao'
 import { BookSource } from '../../../../database/entities/BookSource'
-import { ExploreItem } from '../../../../database/types/BookSourceType'
 import ContentRefresh from './ContentRefresh'
-import { JSON } from '@kit.ArkTS'
+import { hasExploreUrlContent } from '../../../../common/utils/exploreUrlUtils'
 
 @Component
 export default struct BodyContent {
@@ -42,18 +41,9 @@ export default struct BodyContent {
       enabled: true,
       hasExploreUrl: true
     }).then(bookSources => {
-      // 过滤掉 exploreUrl 为空数组的伪发现源，确保每个 Tab 都有实际可展示内容
+      // 过滤掉 exploreUrl 为空的伪发现源（兼容新版 JSON 数组与旧版"标题::url"格式）
       const valid = bookSources.filter((s: BookSource) => {
-        const raw = s.exploreUrl ?? ''
-        if (!raw.trim()) {
-          return false
-        }
-        try {
-          const arr = JSON.parse(raw) as ExploreItem[]
-          return arr instanceof Array && arr.length > 0
-        } catch (e) {
-          return false
-        }
+        return hasExploreUrlContent(s.exploreUrl ?? '')
       })
       console.info('TagInfo', JSON.stringify(valid.slice(0, 3)))
       this.sourceList = valid

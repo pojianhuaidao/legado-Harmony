@@ -3,7 +3,7 @@ import noSourceFind from '../../../../componets/common/noSourceFind'
 import RefreshComponent from '../../../../componets/common/RefreshComponent'
 import { BookSource } from '../../../../database/entities/BookSource'
 import BookFindContent from './BookFindContent'
-import { JSON } from '@kit.ArkTS'
+import { parseExploreUrl } from '../../../../common/utils/exploreUrlUtils'
 import { ExploreRule } from '../../../../database/entities/rule'
 import { ExploreItem } from '../../../../database/types/BookSourceType'
 import AllCategory, { GroupExploreList } from './AllCategory'
@@ -51,8 +51,8 @@ export default struct ContentRefresh {
     try {
       this.exploreRule = this.bookSource.ruleExplore
       console.info('TagInfo: 书源地址：', this.bookSource.bookSourceUrl)
-      console.info('TagInfo: 发现地址：', JSON.stringify(JSON.parse(this.bookSource.exploreUrl ?? '[]')))
-      const exploreList = JSON.parse(this.bookSource.exploreUrl ?? '[]') as ExploreItem[]
+      const exploreList = parseExploreUrl(this.bookSource.exploreUrl ?? '')
+      console.info('TagInfo: 发现条目数：', exploreList.length)
       this.exploreList = exploreList
       this.pageNum = 1
       this.getShowExploreList()
