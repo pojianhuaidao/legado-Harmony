@@ -63,9 +63,10 @@ struct readStatistics {
         const list = await bookHistoryDao.search({})
         list.forEach((item: BookHistory) => {
           const dur = Math.max(0, item.durChapterTime)
+          const coverUrl: string = item.coverUrl ?? ''
           mapped.push(new readBookList(
             item.bookName,
-            item.coverUrl !== '' ? item.coverUrl : $r("app.media.book_cover"),
+            coverUrl !== '' ? coverUrl : $r("app.media.book_cover"),
             item.author,
             [Math.floor(dur / 3600000), Math.floor((dur % 3600000) / 60000)],
             new Date(dur),
@@ -89,9 +90,10 @@ struct readStatistics {
           const current = b.durChapterIndex ?? 0
           if (total > 0 && current >= total - 1) {
             const dur = Math.max(0, b.durChapterTime ?? 0)
+            const coverUrl: string = b.coverUrl ?? ''
             mapped.push(new readBookList(
               b.bookName,
-              b.coverUrl !== '' ? b.coverUrl : $r("app.media.book_cover"),
+              coverUrl !== '' ? coverUrl : $r("app.media.book_cover"),
               b.author,
               [Math.floor(dur / 3600000), Math.floor((dur % 3600000) / 60000)],
               new Date(dur),

@@ -1,4 +1,4 @@
-import { webview, CacheMode, MixedMode } from '@kit.ArkWeb';
+import { webview } from '@kit.ArkWeb';
 import { router } from '@kit.ArkUI';
 import { showMessage } from '../../../componets/common/promptShow';
 import ImportCommon from '../../../componets/import/ImportCommon';
@@ -140,10 +140,10 @@ struct RssWebView {
         Web({ src: this.sourcesUrl||'www.baidu.com', controller: this.controller })
           .domStorageAccess(true)
           .javaScriptAccess(true)
-          .cacheMode(CacheMode.Default)
-          .mixedMode(MixedMode.All)
-          .onProgressChange((event: { progress: number }) => {
-            this.webProgress = event.progress
+          .cacheMode(webview.CacheMode.Default)
+          .mixedMode(webview.MixedMode.All)
+          .onProgressChange((event: webview.OnProgressChangeEvent) => {
+            this.webProgress = event.newProgress
           })
           .onPageBegin((event) => {
             //设置setCustomUserAgent为手机

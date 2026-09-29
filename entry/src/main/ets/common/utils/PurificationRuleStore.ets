@@ -16,6 +16,27 @@ export interface PurificationRule {
   rules: PurificationRuleItem[]
 }
 
+// 宽松导入结构（兼容安卓 legado 净化源 JSON，字段均可选）
+interface RawRuleItem {
+  pattern?: string
+  replacement?: string
+  isRegex?: boolean
+  isEnabled?: boolean
+  enabled?: boolean
+  scope?: string
+}
+
+interface RawRuleGroup {
+  name?: string
+  enabled?: boolean
+  isEnabled?: boolean
+  rules?: (RawRuleItem | string)[]
+  pattern?: string
+  replacement?: string
+  isRegex?: boolean
+  scope?: string
+}
+
 // 净化规则持久化存储（Preferences）
 export class PurificationRuleStore {
   preferences?: dataPreferences.Preferences;
@@ -29,39 +50,38 @@ export class PurificationRuleStore {
     }
   }
 
-  // 获取全部净化规则（兼容旧版 string[] 结构，统一转换为 PurificationRuleItem[]）
+  // 获取全部净化规则（兼容旧版 string[] 结构与安卓 ReplaceRule 结构，统一转换为 PurificationRuleItem[]）
   getAll(): PurificationRule[] {
     this.initPreferences();
     const raw = this.preferences?.getSync(this.key, '[]') as string;
     try {
-      const arr = JSON.parse(raw) as PurificationRule[];
+      const arr = JSON.parse(raw) as RawRuleGroup[];
       const result: PurificationRule[] = [];
       for (let i = 0; i < arr.length; i++) {
-        const item = arr[i] as Record<string, Object | undefined>;
-        const name = item['name'] !== undefined ? String(item['name']) : '未命名规则';
-        const enabled = item['enabled'] === undefined ? true : item['enabled'] === true;
-        const rulesRaw = item['rules'];
+        const item = arr[i];
+        const name = item.name !== undefined ? item.name : '未命名规则';
+        const enabled = item.enabled === undefined ? true : item.enabled === true;
+        const rulesRaw = item.rules;
         const rules: PurificationRuleItem[] = [];
-        if (rulesRaw instanceof Array) {
+        if (rulesRaw !== undefined && rulesRaw instanceof Array) {
           for (let j = 0; j < rulesRaw.length; j++) {
             const r = rulesRaw[j];
             if (typeof r === 'string') {
-              const parsed = PurificationRuleStore.parseRuleString(String(r));
+              const parsed = PurificationRuleStore.parseRuleString(r);
               if (parsed) {
                 rules.push(parsed);
               }
-            } else if (r !== null && typeof r === 'object') {
-              const ro = r as Record<string, Object | undefined>;
-              const pattern = ro['pattern'] !== undefined ? String(ro['pattern']) : '';
+            } else {
+              const pattern = r.pattern !== undefined ? r.pattern : '';
               if (pattern.length === 0) {
                 continue;
               }
-              const replacement = ro['replacement'] !== undefined ? String(ro['replacement']) : '';
-              const isRegex = ro['isRegex'] === undefined ? true : ro['isRegex'] === true;
-              const scope = ro['scope'] !== undefined ? String(ro['scope']) : 'content';
-              const rEnabled = ro['isEnabled'] === undefined
-                ? (ro['enabled'] === undefined ? true : ro['enabled'] === true)
-                : ro['isEnabled'] === true;
+              const replacement = r.replacement !== undefined ? r.replacement : '';
+              const isRegex = r.isRegex === undefined ? true : r.isRegex === true;
+              const scope = r.scope !== undefined ? r.scope : 'content';
+              const rEnabled = r.isEnabled === undefined
+                ? (r.enabled === undefined ? true : r.enabled === true)
+                : r.isEnabled === true;
               rules.push({ pattern: pattern, replacement: replacement, isRegex: isRegex, scope: scope, enabled: rEnabled });
             }
           }
@@ -90,7 +110,7 @@ export class PurificationRuleStore {
       for (let i = 0; i < arr.length; i++) {
         const item = arr[i];
         if (typeof item === 'string') {
-          const parsed = PurificationRuleStore.parseRuleString(String(item));
+          const parsed = PurificationRuleStore.parseRuleString(item);
           if (parsed) {
             result.push({ name: `净化规则${result.length + 1}`, enabled: true, rules: [parsed] });
           }
@@ -99,47 +119,46 @@ export class PurificationRuleStore {
         if (item === null || typeof item !== 'object') {
           continue;
         }
-        const obj = item as Record<string, Object | undefined>;
-        const name = obj['name'] !== undefined ? String(obj['name']) : `净化规则${result.length + 1}`;
-        const groupEnabled = obj['isEnabled'] === undefined
-          ? (obj['enabled'] === undefined ? true : obj['enabled'] === true)
-          : obj['isEnabled'] === true;
-        const rulesRaw = obj['rules'];
+        const obj = item as RawRuleGroup;
+        const name = obj.name !== undefined ? obj.name : `净化规则${result.length + 1}`;
+        const groupEnabled = obj.isEnabled === undefined
+          ? (obj.enabled === undefined ? true : obj.enabled === true)
+          : obj.isEnabled === true;
+        const rulesRaw = obj.rules;
         const rules: PurificationRuleItem[] = [];
-        if (rulesRaw instanceof Array) {
+        if (rulesRaw !== undefined && rulesRaw instanceof Array) {
           // 旧鸿蒙格式：{name, rules:[string | {pattern,...}]}
           for (let j = 0; j < rulesRaw.length; j++) {
             const r = rulesRaw[j];
             if (typeof r === 'string') {
-              const parsed = PurificationRuleStore.parseRuleString(String(r));
+              const parsed = PurificationRuleStore.parseRuleString(r);
               if (parsed) {
                 rules.push(parsed);
               }
-            } else if (r !== null && typeof r === 'object') {
-              const ro = r as Record<string, Object | undefined>;
-              const pattern = ro['pattern'] !== undefined ? String(ro['pattern']) : '';
+            } else {
+              const pattern = r.pattern !== undefined ? r.pattern : '';
               if (pattern.length === 0) {
                 continue;
               }
-              const replacement = ro['replacement'] !== undefined ? String(ro['replacement']) : '';
-              const isRegex = ro['isRegex'] === undefined ? true : ro['isRegex'] === true;
-              const scope = ro['scope'] !== undefined ? String(ro['scope']) : 'content';
-              const rEnabled = ro['isEnabled'] === undefined
-                ? (ro['enabled'] === undefined ? true : ro['enabled'] === true)
-                : ro['isEnabled'] === true;
+              const replacement = r.replacement !== undefined ? r.replacement : '';
+              const isRegex = r.isRegex === undefined ? true : r.isRegex === true;
+              const scope = r.scope !== undefined ? r.scope : 'content';
+              const rEnabled = r.isEnabled === undefined
+                ? (r.enabled === undefined ? true : r.enabled === true)
+                : r.isEnabled === true;
               rules.push({ pattern: pattern, replacement: replacement, isRegex: isRegex, scope: scope, enabled: rEnabled });
             }
           }
         } else {
           // 安卓 legado 单条替换规则：对象自身即规则
-          const pattern = obj['pattern'] !== undefined ? String(obj['pattern']) : '';
+          const pattern = obj.pattern !== undefined ? obj.pattern : '';
           if (pattern.length > 0) {
-            const replacement = obj['replacement'] !== undefined ? String(obj['replacement']) : '';
-            const isRegex = obj['isRegex'] === undefined ? true : obj['isRegex'] === true;
-            const scope = obj['scope'] !== undefined ? String(obj['scope']) : 'content';
-            const rEnabled = obj['isEnabled'] === undefined
-              ? (obj['enabled'] === undefined ? true : obj['enabled'] === true)
-              : obj['isEnabled'] === true;
+            const replacement = obj.replacement !== undefined ? obj.replacement : '';
+            const isRegex = obj.isRegex === undefined ? true : obj.isRegex === true;
+            const scope = obj.scope !== undefined ? obj.scope : 'content';
+            const rEnabled = obj.isEnabled === undefined
+              ? (obj.enabled === undefined ? true : obj.enabled === true)
+              : obj.isEnabled === true;
             rules.push({ pattern: pattern, replacement: replacement, isRegex: isRegex, scope: scope, enabled: rEnabled });
           }
         }
