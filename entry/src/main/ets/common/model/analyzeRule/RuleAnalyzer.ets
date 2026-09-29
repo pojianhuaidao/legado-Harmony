@@ -138,6 +138,12 @@ export class RuleAnalyzer {
     if (idx2 > -1) {
       sp.ruleContent = rule.substring(0, idx2);
       sp.regex = rule.substring(idx2 + 2);
+      // 双段替换：##regex##replacement（replacement 可空，空则等价删除）
+      const idx4 = sp.regex.indexOf('##');
+      if (idx4 > -1) {
+        sp.replacement = sp.regex.substring(idx4 + 2);
+        sp.regex = sp.regex.substring(0, idx4);
+      }
       sp.hasRegex = true;
       return sp;
     }
@@ -187,7 +193,13 @@ export class RuleAnalyzer {
     // 前缀规则
     if (content.startsWith('@js:')) {
       const js = content.substring(4).trim();
-      const result = this.runJs(js, source);
+      // 与链尾 @js: 一致：先注入 result=source 变量，legado 规则常用 result = ... 赋值
+      const result = this.runJs('var result = source;\n' + js, source);
+      return this.applyRegexToResult([result], rule);
+    }
+    if (content.startsWith('<js>') && content.endsWith('</js>')) {
+      const js = content.substring(4, content.length - 5).trim();
+      const result = this.runJs('var result = source;\n' + js, source);
       return this.applyRegexToResult([result], rule);
     }
     if (content.startsWith('@put:')) {
@@ -430,29 +442,46 @@ export class RuleAnalyzer {
       return [];
     }
     let nodes: HtmlNode[] = [root];
+    // 最近出现的属性提取段（供链尾 @js: 作 base；非链尾属性段不再当选择器查询）
+    let pendingAttr: string = '';
     for (let i = 0; i < segments.length; i++) {
       const seg = segments[i].trim();
       if (seg.length === 0) {
         continue;
       }
       const isLast = (i === segments.length - 1);
-      // 链尾 @js: 执行（legado 语法 "xxx@js:code"，code 内 result=当前元素 HTML）
+      // 链尾 @js: 执行（legado 语法 "xxx@text@js:code"，code 内 result=最近属性值或元素 HTML）
       if (isLast && seg.startsWith('js:')) {
         const jsCode = seg.substring(3).trim();
         const out: string[] = [];
         for (let j = 0; j < nodes.length; j++) {
-          const html = nodes[j].outerHtml();
-          out.push(this.runJs('var result = source;\n' + jsCode, html));
+          let base: string = '';
+          if (pendingAttr.length > 0) {
+            base = engine.extractAttr(nodes[j], pendingAttr);
+          } else {
+            base = nodes[j].outerHtml();
+          }
+          let jsResult = this.runJs('var result = source;\n' + jsCode, base);
+          // JS 执行失败/返回空（如 CI jsvmStub 无法执行 @js:）时回退原始值，避免字段整体丢失
+          if (jsResult.length === 0 && base.length > 0) {
+            jsResult = base;
+          }
+          out.push(jsResult);
         }
         return out;
       }
-      if (isLast && this.isAttrToken(seg)) {
-        // 属性提取
-        const out: string[] = [];
-        for (let j = 0; j < nodes.length; j++) {
-          out.push(engine.extractAttr(nodes[j], seg));
+      if (this.isAttrToken(seg)) {
+        if (isLast) {
+          // 属性提取
+          const out: string[] = [];
+          for (let j = 0; j < nodes.length; j++) {
+            out.push(engine.extractAttr(nodes[j], seg));
+          }
+          return out;
         }
-        return out;
+        // 非链尾属性段：仅记录，继续后续选择器/JS 段
+        pendingAttr = seg;
+        continue;
       }
       // 选择器段（可能含 !N 索引后缀）
       const idxInfo = this.parseIndexSuffix(seg);
