@@ -383,7 +383,10 @@ export default struct IndexShelf {
       })
       .width("100%")
       .onClick(() => {
-
+        this.isShowCloudImport = false
+        router.pushUrl({
+          url: 'pages/view/myCenter/WebDav'
+        })
       })
 
       Row({ space: 16 }) {
@@ -413,7 +416,10 @@ export default struct IndexShelf {
       })
       .width("100%")
       .onClick(() => {
-
+        this.isShowCloudImport = false
+        router.pushUrl({
+          url: 'pages/view/myCenter/WebDav'
+        })
       })
 
       Divider()

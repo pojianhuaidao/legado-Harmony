@@ -7,6 +7,7 @@ import { PublicConstants, TextConstants } from '../../../common/constants/Public
 import { ColumnModifier } from '../../../common/utils/ComponetModifier'
 import { ThemeStorageKey } from '../../../common/constants/Theme'
 import { ThemeItem } from '../../../common/model/Theme'
+import themeModeManager, { DARK_BG, DARK_TEXT, DARK_SUB_TEXT, DARK_CARD, DARK_DIVIDER, LIGHT_BG } from '../../../common/utils/ThemeModeManager'
 import { image } from '@kit.ImageKit'
 import { resourceManager } from '@kit.LocalizationKit'
 import { BusinessError } from '@kit.BasicServicesKit'
@@ -45,6 +46,7 @@ export default struct MyCenter {
 
   // 主题颜色
   @StorageProp(ThemeStorageKey.THEME) theme: ThemeItem = {} as ThemeItem
+  @StorageProp('isdark') isDark: boolean = false
 
   aboutToAppear(): void {
     this.refreshReadingTime()
@@ -119,7 +121,7 @@ export default struct MyCenter {
           .interpolation(ImageInterpolation.Medium).onClick(this.avatar_onclick)
         //昵称及阅读时长
         Column({space :8}){
-          Text("本地书友").fontSize(16).fontWeight(600).lineHeight(24)
+          Text("本地书友").fontSize(16).fontWeight(600).lineHeight(24).fontColor(this.textMain())
           Text("今日阅读"+this.reading_time+"分钟").fontSize(12).fontColor(TextConstants.TEXT_FONT_COLOR)
             .lineHeight(20)
         }.alignItems(HorizontalAlign.Start).width("45%").height("100%").layoutWeight(1)
@@ -144,8 +146,8 @@ export default struct MyCenter {
       Row(){
         ForEach(this.head_list,(item:dataItem,index:number)=>{
           Column({space:5}){
-            Text(item.value.toString()).fontSize(20).fontWeight(600)
-            Text(item.title).fontSize(10).fontWeight(500)
+            Text(item.value.toString()).fontSize(20).fontWeight(600).fontColor(this.textMain())
+            Text(item.title).fontSize(10).fontWeight(500).fontColor(this.textSub())
           }.onClick(()=>{
             this.head_onclick(index)
           })
@@ -159,7 +161,7 @@ export default struct MyCenter {
         ForEach(this.center_list,(item:dataItem)=>{
           Column({space:4}){
             Image(item.icon).size({width:24,height:24})
-            Text(item.title).fontSize(12)
+            Text(item.title).fontSize(12).fontColor(this.textMain())
           }
           .width(80)
           .height(48)
@@ -169,7 +171,7 @@ export default struct MyCenter {
       }.width("100%")
       .justifyContent(FlexAlign.SpaceBetween)
       .padding({top:16,bottom:16})
-      .backgroundColor(PublicConstants.THEME_COLOR_WHITE)
+      .backgroundColor(this.bgCard())
       .borderRadius(10)
       Blank(16)
 
@@ -185,7 +187,7 @@ export default struct MyCenter {
             ForEach(this.end_list,(item:dataItem)=>{
               Row({space:10}){
                 Image(item.icon).size({width:20,height:20}).interpolation(ImageInterpolation.High)
-                Text(item.title).fontSize(14).width("75%" ).layoutWeight(1)
+                Text(item.title).fontSize(14).width("75%" ).layoutWeight(1).fontColor(this.textMain())
                 Image($r("app.media.right")).size({width:24,height:24})
               }
               .width("100%")
@@ -200,7 +202,7 @@ export default struct MyCenter {
       }
       .layoutWeight(1)
       .padding({top:5,bottom:5})
-      .backgroundColor(PublicConstants.THEME_COLOR_WHITE)
+      .backgroundColor(this.bgCard())
       .borderRadius(10)
       .justifyContent(FlexAlign.SpaceBetween)
     }
@@ -211,9 +213,25 @@ export default struct MyCenter {
     })
   }
   
+  //深色模式适配色
+  private bgCard(): string {
+    return this.isDark ? DARK_CARD : PublicConstants.THEME_COLOR_WHITE
+  }
+  private textMain(): string {
+    return this.isDark ? DARK_TEXT : '#000000'
+  }
+  private textSub(): string {
+    return this.isDark ? DARK_SUB_TEXT : TextConstants.TEXT_FONT_COLOR
+  }
+
   //切换夜间模式
   night_onclick(){
-
+    const curIndex: number = AppStorage.get<number>(ThemeStorageKey.THEMEINDEX) ?? 0
+    const nowDark: boolean = themeModeManager.toggle(this.theme, curIndex)
+    promptAction.showToast({
+      message: nowDark ? '已切换深色模式' : '已切换浅色模式',
+      duration: 1000,
+    })
   }
   //头像点击事件
   avatar_onclick(){

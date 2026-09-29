@@ -68,7 +68,5 @@ export default class MySetConstants {
 
   static readonly SET_CLEAR_WEB: string = 'setClearWeb';
 
-  static readonly SET_USER_AGENT: string = 'setUserAgent';
-
   static readonly SET_LANGUAGE: string = 'setLanguage';
 }

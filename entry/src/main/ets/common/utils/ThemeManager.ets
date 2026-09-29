@@ -3,15 +3,16 @@ import { ThemeItem } from "../model/Theme";
 
 export class ThemeManager {
   themeList: ThemeItem[] = [
-    {text: '主题1', mainColor: ThemeColor.ORANGE.mainColor, secondColor: ThemeColor.ORANGE.secondColor},
+    {text: '主题1', mainColor: ThemeColor.GREEN.mainColor, secondColor: ThemeColor.GREEN.secondColor},
     {text: '主题2', mainColor: ThemeColor.RED.mainColor, secondColor: ThemeColor.RED.secondColor},
-    {text: '主题3', mainColor: ThemeColor.GREEN.mainColor, secondColor: ThemeColor.GREEN.secondColor},
+    {text: '主题3', mainColor: ThemeColor.ORANGE.mainColor, secondColor: ThemeColor.ORANGE.secondColor},
     {text: '主题4', mainColor: ThemeColor.YELLOW.mainColor, secondColor: ThemeColor.YELLOW.secondColor},
     {text: '主题5', mainColor: ThemeColor.BLUE.mainColor, secondColor: ThemeColor.BLUE.secondColor},
   ]
 
   init() {
-    PersistentStorage.persistProp<ThemeItem>(ThemeStorageKey.THEME, {text: '主题1', mainColor: ThemeColor.ORANGE.mainColor, secondColor: ThemeColor.ORANGE.secondColor})
+    PersistentStorage.persistProp<ThemeItem>(ThemeStorageKey.THEME, {text: '主题1', mainColor: ThemeColor.GREEN.mainColor, secondColor: ThemeColor.GREEN.secondColor})
+    PersistentStorage.persistProp<boolean>('isdark', false)
     PersistentStorage.persistProp<string>(ThemeStorageKey.THEMELISTSTR, JSON.stringify(this.themeList))
 
     // 解析主题数组字符串 加载主题
@@ -20,6 +21,16 @@ export class ThemeManager {
     AppStorage.setOrCreate<ThemeItem[]>(ThemeStorageKey.THEMELIST, themeList)
 
     PersistentStorage.persistProp<number>(ThemeStorageKey.THEMEINDEX, 0) // 被选中主题的索引
+
+    // 默认主题迁移：旧版本默认橙色（主题1=ORANGE），新版本默认绿色
+    const curTheme = AppStorage.get<ThemeItem>(ThemeStorageKey.THEME)
+    const curIndex: number = AppStorage.get<number>(ThemeStorageKey.THEMEINDEX) ?? 0
+    if (curTheme !== null && curTheme !== undefined
+      && curTheme.text === '主题1'
+      && curTheme.mainColor === ThemeColor.ORANGE.mainColor
+      && curIndex === 0) {
+      AppStorage.setOrCreate<ThemeItem>(ThemeStorageKey.THEME, {text: '主题1', mainColor: ThemeColor.GREEN.mainColor, secondColor: ThemeColor.GREEN.secondColor})
+    }
   }
 
   setTheme(newTheme: ThemeItem, index: number) {

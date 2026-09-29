@@ -12,6 +12,12 @@ import { JSON } from '@kit.ArkTS'
 import { image } from '@kit.ImageKit'
 import { ThemeStorageKey } from '../common/constants/Theme'
 import { ThemeItem } from '../common/model/Theme'
+import { DARK_BG, DARK_DIVIDER, LIGHT_BG } from '../common/utils/ThemeModeManager'
+import settingsManager from '../common/utils/SettingsManager'
+import MySetConstants from '../common/constants/MySetConstants'
+import { Books } from '../database/entities/Books'
+import bookHistoryDao from '../database/dao/BookHistoryDao'
+import { router } from '@kit.ArkUI'
 
 @Entry
 @Component
@@ -19,6 +25,7 @@ struct Main {
   @State showReadShow:boolean = true
   @State currentTabIndex: number = 0
   @State isShow: boolean = true
+  @StorageProp('isdark') isDark: boolean = false
   @StorageLink('bottomRectHeight') bottomRectHeight: number = 0
   @StorageLink('topRectHeight') topRectHeight: number = 0
   @StorageProp('APP_INDEX_SCROLLABLE') APP_INDEX_SCROLLABLE: boolean = true
@@ -40,6 +47,33 @@ struct Main {
       this.APP_INDEX_SCROLLABLE = !this.APP_INDEX_SCROLLABLE
       console.log('SubscriptionBatchEdit:' + params)
     })
+
+    // 设置项消费：自动刷新书架
+    if (settingsManager.getBool(MySetConstants.SET_REFRESH)) {
+      const n: number = AppStorage.get<number>('BOOK_IS_BOOK_REFRESHING') ?? 0
+      AppStorage.setOrCreate('BOOK_IS_BOOK_REFRESHING', n + 1)
+    }
+    // 设置项消费：自动跳转最近阅读（启动后仅执行一次）
+    if (settingsManager.getBool(MySetConstants.SET_JUMP)) {
+      const jumped: boolean = AppStorage.get<boolean>('APP_HAS_AUTO_JUMPED') ?? false
+      if (!jumped) {
+        AppStorage.setOrCreate('APP_HAS_AUTO_JUMPED', true)
+        bookHistoryDao.searchLimit().then((list) => {
+          if (list.length > 0) {
+            const h = list[0]
+            const book: Books = new Books()
+            book.bookName = h.bookName
+            book.bookUrl = h.bookUrl ?? ''
+            book.author = h.author
+            book.coverUrl = h.coverUrl ?? ''
+            book.bookType = h.bookType ?? 0
+            router.pushUrl({ url: 'pages/view/BookDetailPage', params: book })
+          }
+        }).catch((err: Error) => {
+          console.error('autoJump err: ' + JSON.stringify(err))
+        })
+      }
+    }
   }
 
   screenShot() {
@@ -136,6 +170,7 @@ struct Main {
     }
     .width("100%")
     .height("100%")
+    .backgroundColor(this.isDark ? DARK_BG : LIGHT_BG)
     .id('main')
   }
 }

@@ -3,12 +3,23 @@ import { Attribute } from '../../../common/utils/Attribute'
 import { SetList, SetGroupList } from '../../../componets/dataList/SetListGroup'
 import { SetHead } from '../../../componets/myset/SetHead'
 import { SetListView } from '../../../componets/myset/SetListView'
+import settingsManager from '../../../common/utils/SettingsManager'
+import bookDataPreferences from '../../../common/utils/DataPreferencesUtils'
+import { showMessage } from '../../../componets/common/promptShow'
+import { webview } from '@kit.ArkWeb'
+import fs from '@ohos.file.fs'
+import { common } from '@kit.AbilityKit'
 
 @Entry
 @Component
 struct MySetPage{
   @State private isShowPreDon: boolean = false
   @State private isShowLanguage: boolean = false
+  @State private isShowBookSave: boolean = false
+  @State private isShowImgCache: boolean = false
+  @State private isShowWebPort: boolean = false
+  @State private imgCacheSize: string = '0 B'
+  @State private bookSavePath: string = ''
 
   @StorageLink(MySetConstants.SET_REFRESH) setRefresh: boolean = true
   @StorageLink(MySetConstants.SET_JUMP) setJump: boolean = true
@@ -47,8 +58,7 @@ struct MySetPage{
   @State netWorkSetList: SetList[]=[
     new SetList(false,'Webservice唤醒锁',this.setAwaken,'','如遇杀后台可开启',MySetConstants.SET_AWAKEN),
     new SetList(true,'Web端口',true,'','当前端口1122',MySetConstants.SET_WEB_PORT),
-    new SetList(true,'清除webview数据',true,'','清除内置浏览器所有数据',MySetConstants.SET_CLEAR_WEB),
-    new SetList(true,'用户代理',true,'','',MySetConstants.SET_USER_AGENT)
+    new SetList(true,'清除webview数据',true,'','清除内置浏览器所有数据',MySetConstants.SET_CLEAR_WEB)
   ]
 
   @State otherSetList: SetList[]=[
@@ -128,6 +138,21 @@ struct MySetPage{
       dragBar: false,
       showClose: false,
     })
+    .bindSheet($$this.isShowBookSave, this.bookSaveSheet(), {
+      height: 220,
+      dragBar: false,
+      showClose: false,
+    })
+    .bindSheet($$this.isShowImgCache, this.imgCacheSheet(), {
+      height: 260,
+      dragBar: false,
+      showClose: false,
+    })
+    .bindSheet($$this.isShowWebPort, this.webPortSheet(), {
+      height: 220,
+      dragBar: false,
+      showClose: false,
+    })
 
 
   }
@@ -177,7 +202,7 @@ struct MySetPage{
   // 通过@Builder构建半模态展示界面
   @Builder languageSheet() {
     Column() {
-      Text('预下载')
+      Text('语言')
         .fontSize(16)
         .textAlign(TextAlign.Center)
         .width('100%').height(56)
@@ -186,11 +211,111 @@ struct MySetPage{
           .fontSize(16)
           .textAlign(TextAlign.Start)
           .width('100%').height(56)
+          .padding({left:40})
+          .onClick(()=>{
+            this.selectLanguage = value
+            settingsManager.setStr(MySetConstants.SET_LANGUAGE, value)
+            this.isShowLanguage = false
+            showMessage('语言已切换为' + value)
+          })
       })
-
     }
     .width('100%')
     .height(288)
+    .backgroundColor(Color.White)
+  }
+
+  // 通过@Builder构建书籍保存位置半模态
+  @Builder bookSaveSheet() {
+    Column({ space: 12 }) {
+      Text('书籍保存位置')
+        .fontSize(16)
+        .fontWeight(600)
+        .width('100%').height(48)
+        .textAlign(TextAlign.Center)
+      Text('书籍文件保存在应用沙箱目录：')
+        .fontSize(13)
+        .opacity(0.6)
+        .width('100%')
+        .padding({left:20,right:20})
+      Text(this.bookSavePath)
+        .fontSize(12)
+        .fontColor('#188BFF')
+        .width('100%')
+        .padding({left:20,right:20})
+        .textOverflow({overflow:TextOverflow.Ellipsis})
+        .maxLines(3)
+      Text('关闭')
+        .fontSize(14)
+        .fontColor('#188BFF')
+        .width('100%')
+        .height(44)
+        .textAlign(TextAlign.Center)
+        .margin({top:8})
+        .onClick(()=>{this.isShowBookSave = false})
+    }
+    .width('100%')
+    .height(220)
+    .backgroundColor(Color.White)
+  }
+
+  // 通过@Builder构建图片缓存半模态
+  @Builder imgCacheSheet() {
+    Column({ space: 12 }) {
+      Text('图片缓存')
+        .fontSize(16)
+        .fontWeight(600)
+        .width('100%').height(48)
+        .textAlign(TextAlign.Center)
+      Text('当前缓存大小：' + this.imgCacheSize)
+        .fontSize(14)
+        .width('100%')
+        .textAlign(TextAlign.Center)
+      Row({space:20}) {
+        Button('清空缓存')
+          .backgroundColor('#FF3B30')
+          .onClick(()=>{
+            this.clearImgCache()
+          })
+        Button('取消')
+          .backgroundColor(Color.Grey)
+          .onClick(()=>{
+            this.isShowImgCache = false
+          })
+      }
+      .width('100%')
+      .justifyContent(FlexAlign.Center)
+      .margin({top:12})
+    }
+    .width('100%')
+    .height(260)
+    .backgroundColor(Color.White)
+  }
+
+  // 通过@Builder构建Web端口说明半模态
+  @Builder webPortSheet() {
+    Column({ space: 12 }) {
+      Text('Web 端口')
+        .fontSize(16)
+        .fontWeight(600)
+        .width('100%').height(48)
+        .textAlign(TextAlign.Center)
+      Text('当前版本预留端口 1122（Web 服务功能尚未开放）')
+        .fontSize(13)
+        .opacity(0.6)
+        .width('100%')
+        .textAlign(TextAlign.Center)
+      Text('关闭')
+        .fontSize(14)
+        .fontColor('#188BFF')
+        .width('100%')
+        .height(44)
+        .textAlign(TextAlign.Center)
+        .margin({top:8})
+        .onClick(()=>{this.isShowWebPort = false})
+    }
+    .width('100%')
+    .height(220)
     .backgroundColor(Color.White)
   }
 
@@ -203,52 +328,208 @@ struct MySetPage{
       case MySetConstants.SET_REFRESH:
         this.setRefresh = !this.setRefresh
         this.bookSetList[0].toggleStatus = this.setRefresh;
+        settingsManager.setBool(MySetConstants.SET_REFRESH, this.setRefresh);
+        showMessage(this.setRefresh ? '已开启自动刷新' : '已关闭自动刷新');
         break;
       case MySetConstants.SET_JUMP:
         this.setJump = !this.setJump
         this.bookSetList[1].toggleStatus = this.setJump;
+        settingsManager.setBool(MySetConstants.SET_JUMP, this.setJump);
+        showMessage(this.setJump ? '已开启自动跳转最近阅读' : '已关闭自动跳转最近阅读');
         break;
       case MySetConstants.SET_REPLACE:
         this.setReplace = !this.setReplace
         this.bookSetList[2].toggleStatus = this.setReplace;
+        settingsManager.setBool(MySetConstants.SET_REPLACE, this.setReplace);
+        showMessage(this.setReplace ? '已开启默认替换净化' : '已关闭默认替换净化');
         break;
       case MySetConstants.SET_TIP:
         this.setTip = !this.setTip
         this.bookSetList[3].toggleStatus = this.setTip;
+        settingsManager.setBool(MySetConstants.SET_TIP, this.setTip);
+        showMessage(this.setTip ? '已开启返回提示' : '已关闭返回提示');
         break;
       case MySetConstants.SET_IMG_ANTI:
         this.setImgAnti = !this.setImgAnti
         this.cacheSetList[3].toggleStatus = this.setImgAnti;
+        settingsManager.setBool(MySetConstants.SET_IMG_ANTI, this.setImgAnti);
+        showMessage(this.setImgAnti ? '已开启图片抗锯齿' : '已关闭图片抗锯齿');
         break;
       case MySetConstants.SET_AWAKEN:
         this.setAwaken = !this.setAwaken
         this.netWorkSetList[0].toggleStatus = this.setAwaken;
+        settingsManager.setBool(MySetConstants.SET_AWAKEN, this.setAwaken);
+        showMessage(this.setAwaken ? '已开启唤醒锁' : '已关闭唤醒锁');
         break;
       case MySetConstants.SET_HEAD:
         this.setHead = !this.setHead
         this.otherSetList[0].toggleStatus = this.setHead;
+        settingsManager.setBool(MySetConstants.SET_HEAD, this.setHead);
+        showMessage(this.setHead ? '已开启耳机按键响应' : '已关闭耳机按键响应');
         break;
       case MySetConstants.SET_SEARCH:
         this.setSearch = !this.setSearch
         this.otherSetList[1].toggleStatus = this.setSearch;
+        settingsManager.setBool(MySetConstants.SET_SEARCH, this.setSearch);
+        showMessage(this.setSearch ? '已开启文字操作搜索' : '已关闭文字操作搜索');
         break;
       case MySetConstants.SET_BOOK_SAVE:
+        this.refreshBookSavePath();
+        this.isShowBookSave = !this.isShowBookSave;
         break;
       case MySetConstants.SET_PRE_DOWNLOAD:
         this.isShowPreDon = !this.isShowPreDon;
         break;
       case MySetConstants.SET_IMG_CACHE:
+        this.refreshImgCacheSize();
+        this.isShowImgCache = !this.isShowImgCache;
         break;
       case MySetConstants.SET_WEB_PORT:
+        this.isShowWebPort = !this.isShowWebPort;
         break;
       case MySetConstants.SET_CLEAR_WEB:
-        break;
-      case MySetConstants.SET_USER_AGENT:
+        this.clearWebViewData();
         break;
       case MySetConstants.SET_LANGUAGE:
         this.isShowLanguage = !this.isShowLanguage;
         break;
     }
+  }
+
+  /** 展示书籍保存位置（应用沙箱目录） */
+  private refreshBookSavePath(): void {
+    const ctx = getContext(this) as common.UIAbilityContext
+    this.bookSavePath = ctx.filesDir
+  }
+
+  /** 计算缓存目录大小（递归） */
+  private calcDirSize(dirPath: string): number {
+    let total: number = 0
+    try {
+      if (!fs.accessSync(dirPath)) {
+        return 0
+      }
+      const names: string[] = fs.listFileSync(dirPath)
+      for (let i = 0; i < names.length; i++) {
+        const childPath: string = dirPath + '/' + names[i]
+        const stat = fs.statSync(childPath)
+        if (stat.isDirectory()) {
+          total += this.calcDirSize(childPath)
+        } else {
+          total += stat.size
+        }
+      }
+    } catch (e) {
+      console.error('calcDirSize error: ' + JSON.stringify(e))
+    }
+    return total
+  }
+
+  /** 刷新图片缓存大小（系统 cache 目录） */
+  private refreshImgCacheSize(): void {
+    const ctx = getContext(this) as common.UIAbilityContext
+    const size: number = this.calcDirSize(ctx.cacheDir)
+    if (size < 1024) {
+      this.imgCacheSize = size + ' B'
+    } else if (size < 1024 * 1024) {
+      this.imgCacheSize = (size / 1024).toFixed(1) + ' KB'
+    } else {
+      this.imgCacheSize = (size / 1024 / 1024).toFixed(1) + ' MB'
+    }
+  }
+
+  /** 清空图片缓存目录内容（保留目录本身） */
+  private clearImgCache(): void {
+    const ctx = getContext(this) as common.UIAbilityContext
+    try {
+      if (!fs.accessSync(ctx.cacheDir)) {
+        this.isShowImgCache = false
+        showMessage('缓存目录不存在')
+        return
+      }
+      const names: string[] = fs.listFileSync(ctx.cacheDir)
+      for (let i = 0; i < names.length; i++) {
+        const childPath: string = ctx.cacheDir + '/' + names[i]
+        const stat = fs.statSync(childPath)
+        if (stat.isDirectory()) {
+          this.removeDirRecursively(childPath)
+        } else {
+          fs.unlinkSync(childPath)
+        }
+      }
+      this.refreshImgCacheSize()
+      showMessage('图片缓存已清理')
+    } catch (e) {
+      console.error('clearImgCache error: ' + JSON.stringify(e))
+      showMessage('清理失败')
+    }
+  }
+
+  private removeDirRecursively(dirPath: string): void {
+    try {
+      if (!fs.accessSync(dirPath)) {
+        return
+      }
+      const names: string[] = fs.listFileSync(dirPath)
+      for (let i = 0; i < names.length; i++) {
+        const childPath: string = dirPath + '/' + names[i]
+        const stat = fs.statSync(childPath)
+        if (stat.isDirectory()) {
+          this.removeDirRecursively(childPath)
+        } else {
+          fs.unlinkSync(childPath)
+        }
+      }
+      fs.rmdirSync(dirPath)
+    } catch (e) {
+      console.error('removeDirRecursively error: ' + JSON.stringify(e))
+    }
+  }
+
+  /** 真实清除 WebView 数据（Cookie + 存储） */
+  private clearWebViewData(): void {
+    try {
+      webview.WebCookieManager.clearAllCookies()
+        .then(() => {
+          webview.WebStorage.deleteAllData()
+            .then(() => {
+              showMessage('WebView 数据已清除')
+            })
+            .catch((err: Error) => {
+              console.error('clearAllCookies err: ' + JSON.stringify(err))
+              showMessage('清除失败')
+            })
+        })
+        .catch((err: Error) => {
+          console.error('clearAllCookies err: ' + JSON.stringify(err))
+          showMessage('清除失败')
+        })
+    } catch (e) {
+      console.error('clearWebViewData error: ' + JSON.stringify(e))
+      showMessage('清除失败')
+    }
+  }
+
+  /** 从持久化设置恢复开关状态 */
+  aboutToAppear() {
+    // 无损删除历史遗留的"用户代理"持久化字段
+    bookDataPreferences.delete('setUserAgent');
+    this.setRefresh = settingsManager.getBool(MySetConstants.SET_REFRESH)
+    this.setJump = settingsManager.getBool(MySetConstants.SET_JUMP)
+    this.setReplace = settingsManager.getBool(MySetConstants.SET_REPLACE)
+    this.setTip = settingsManager.getBool(MySetConstants.SET_TIP)
+    this.setImgAnti = settingsManager.getBool(MySetConstants.SET_IMG_ANTI)
+    this.setAwaken = settingsManager.getBool(MySetConstants.SET_AWAKEN)
+    this.setHead = settingsManager.getBool(MySetConstants.SET_HEAD)
+    this.setSearch = settingsManager.getBool(MySetConstants.SET_SEARCH)
+    this.bookSetList[0].toggleStatus = this.setRefresh
+    this.bookSetList[1].toggleStatus = this.setJump
+    this.bookSetList[2].toggleStatus = this.setReplace
+    this.bookSetList[3].toggleStatus = this.setTip
+    this.cacheSetList[3].toggleStatus = this.setImgAnti
+    this.netWorkSetList[0].toggleStatus = this.setAwaken
+    this.otherSetList[0].toggleStatus = this.setHead
+    this.otherSetList[1].toggleStatus = this.setSearch
   }
 }
 
