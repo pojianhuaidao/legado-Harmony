@@ -18,6 +18,7 @@ import { RuleAnalyzer } from '../analyzeRule/RuleAnalyzer';
 import { SearchConfig } from '../SearchConfig';
 import requestUtil from '../../utils/requestUtils';
 import { isNetworkUrl } from '../../utils/utils';
+import purificationRuleStore from '../../utils/PurificationRuleStore';
 
 /**
  * 正文解析结果
@@ -184,6 +185,9 @@ export class BookApi {
         result.content = result.content.replace(new RegExp(rule.replaceRegex, 'g'), '');
       }
     }
+    // 全局净化规则（净化管理导入的规则，正文 scope=content/all，标题 scope=title/all）
+    result.content = purificationRuleStore.applyContent(result.content);
+    result.title = purificationRuleStore.applyTitle(result.title);
     return result;
   }
 

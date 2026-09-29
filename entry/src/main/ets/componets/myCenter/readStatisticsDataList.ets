@@ -26,10 +26,17 @@ export struct readStatisticsDataList{
   @Builder readHeader(dateValue:number[]){
 
     Row(){
-      Text(`${dateValue[0]}年读过${dateValue[1]}本`)
-        .fontSize(16)
-        .lineHeight(24)
-        .fontWeight(500)
+      if (dateValue[0] > 0) {
+        Text(`${dateValue[0]}年读过${dateValue[1]}本`)
+          .fontSize(16)
+          .lineHeight(24)
+          .fontWeight(500)
+      } else {
+        Text(`共读过${dateValue[1]}本`)
+          .fontSize(16)
+          .lineHeight(24)
+          .fontWeight(500)
+      }
     }.padding({top:12,bottom:12})
     .width("100%")
     .justifyContent(FlexAlign.Start)

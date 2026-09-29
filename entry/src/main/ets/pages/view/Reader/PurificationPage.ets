@@ -3,7 +3,7 @@ import fs from '@ohos.file.fs'
 import { FileHandler } from '../../../common/utils/FileHandler'
 import { getPasteDataSync } from '../../../common/utils/utils'
 import { showMessage } from '../../../componets/common/promptShow'
-import purificationRuleStore, { PurificationRule, PurificationRuleStore } from '../../../common/utils/PurificationRuleStore'
+import purificationRuleStore, { PurificationRule, PurificationRuleItem, PurificationRuleStore } from '../../../common/utils/PurificationRuleStore'
 
 @Entry
 @Component
@@ -98,9 +98,26 @@ struct PurificationPage {
     try {
       const parsed: Object = JSON.parse(this.editRules)
       if (parsed instanceof Array) {
-        const rules: string[] = []
+        const rules: PurificationRuleItem[] = []
         parsed.forEach((r: Object) => {
-          rules.push(String(r))
+          if (typeof r === 'string') {
+            const parsedRule = PurificationRuleStore.parseRuleString(String(r))
+            if (parsedRule) {
+              rules.push(parsedRule)
+            }
+          } else if (r !== null && typeof r === 'object') {
+            const ro = r as Record<string, Object | undefined>
+            const pattern = ro['pattern'] !== undefined ? String(ro['pattern']) : ''
+            if (pattern.length > 0) {
+              const replacement = ro['replacement'] !== undefined ? String(ro['replacement']) : ''
+              const isRegex = ro['isRegex'] === undefined ? true : ro['isRegex'] === true
+              const scope = ro['scope'] !== undefined ? String(ro['scope']) : 'content'
+              const rEnabled = ro['isEnabled'] === undefined
+                ? (ro['enabled'] === undefined ? true : ro['enabled'] === true)
+                : ro['isEnabled'] === true
+              rules.push({ pattern: pattern, replacement: replacement, isRegex: isRegex, scope: scope, enabled: rEnabled })
+            }
+          }
         })
         item.rules = rules
       }
@@ -197,6 +214,9 @@ struct PurificationPage {
     .margin({ bottom: 10 })
   }
 
+  @StorageLink('topRectHeight') topRectHeight: number = 0
+  @StorageLink('bottomRectHeight') bottomRectHeight: number = 0
+
   build() {
     Column() {
       Row() {
@@ -239,6 +259,7 @@ struct PurificationPage {
     }
     .width('100%')
     .height('100%')
+    .padding({ top: this.topRectHeight, bottom: this.bottomRectHeight })
     .backgroundColor('#f5f5f5')
     .bindSheet($$this.isShowEdit, this.editSheet(), {
       height: 420,
